@@ -3,48 +3,97 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>يد بيد: الكاميرا والنقاط</title>
+<title>يد بيد: الكاميرا</title>
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root { --bg: #0D0F12; --surf: #171A1F; --line: #262A31; --muted: #A3A9B3; --fg: #F2F3F5; --red: #E81C25; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; }
-main { height: 100vh; height: 100dvh; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px;
+main { height: 100vh; height: 100dvh; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column;
        padding: calc(14px + env(safe-area-inset-top)) 16px calc(14px + env(safe-area-inset-bottom)); }
-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-h1 { margin: 0; font-size: 18px; font-weight: 700; }
-nav { display: flex; padding: 3px; gap: 2px; border-radius: 999px; background: var(--surf); direction: ltr; }
-nav a { min-width: 56px; height: 38px; padding: 0 12px; display: flex; align-items: center; justify-content: center; border-radius: 999px;
-        color: var(--muted); font-size: 14px; font-weight: 600; text-decoration: none; }
+header { min-height: 44px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+#cancel { justify-self: start; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 999px; background: var(--surf); display: none; align-items: center; justify-content: center; cursor: pointer; }
+h1 { grid-column: 2; margin: 0; font-size: 16px; font-weight: 600; }
+#rec { grid-column: 2; display: none; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--red); color: #FFFFFF; font-size: 14px; font-weight: 600; }
+#rec i { width: 9px; height: 9px; border-radius: 999px; background: #FFFFFF; }
+#rec b { font-weight: 600; font-variant-numeric: tabular-nums; }
+nav { grid-column: 3; justify-self: end; display: flex; padding: 3px; gap: 2px; border-radius: 999px; background: var(--surf); direction: ltr; }
+nav a { min-width: 46px; height: 36px; padding: 0 8px; display: flex; align-items: center; justify-content: center; border-radius: 999px; color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; }
 nav a[aria-current] { background: var(--fg); color: var(--bg); }
-.frame { position: relative; flex: 1 1 0; min-height: 0; border-radius: 28px; background: var(--surf); overflow: hidden; }
+
+.frame { position: relative; flex: 1 1 0; min-height: 0; margin-top: 12px; border-radius: 28px; background: var(--surf); overflow: hidden; display: flex; align-items: center; justify-content: center; }
 /* The picture and the points flip together here. The video element itself keeps the raw frame, and that goes to MediaPipe. */
 .stage { position: absolute; inset: 0; transform: scaleX(-1); }
 .stage video, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-#status { position: absolute; top: 14px; left: 0; right: 0; width: fit-content; max-width: calc(100% - 28px); margin: 0 auto; padding: 7px 14px;
-          border-radius: 999px; background: rgba(13, 15, 18, .72); color: var(--fg); font-size: 14px; font-weight: 600; text-align: center; }
-#status.bad { background: rgba(251, 191, 36, .16); color: #FDE68A; }
+#guide { position: relative; display: none; width: 62%; max-width: 270px; height: auto; max-height: 72%; }
+#count { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+#count b { font-size: 132px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+#count span { font-size: 16px; font-weight: 600; color: #D5D9DF; }
+#status { position: absolute; top: 14px; left: 0; right: 0; width: fit-content; max-width: calc(100% - 28px); margin: 0 auto; padding: 7px 14px; border-radius: 999px;
+          background: rgba(13, 15, 18, .72); font-size: 14px; font-weight: 600; text-align: center; }
 #status:empty { display: none; }
-.stats { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.stats div { padding: 10px 12px; border-radius: 16px; background: var(--surf); }
-.stats dt { color: var(--muted); font-size: 13px; }
-.stats dd { margin: 2px 0 0; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.stats small { color: var(--muted); font-size: 12px; font-weight: 500; }
-#info, .note { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; text-align: center; }
-button { height: 52px; flex: none; border: 0; border-radius: 16px; background: var(--red); color: #FFFFFF; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
-button:disabled { opacity: .45; cursor: default; }
-button[hidden] { display: none; }
+#status.ok { background: rgba(74, 222, 128, .14); color: #86EFAC; }
+#status.bad { background: rgba(251, 191, 36, .16); color: #FDE68A; }
+#tag { position: absolute; top: 14px; right: 14px; margin: 0; display: none; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: rgba(13, 15, 18, .72); color: #D5D9DF; font-size: 12px; font-weight: 500; }
+#tag i { width: 7px; height: 7px; border-radius: 999px; background: #4ADE80; }
+#pills { position: absolute; bottom: 14px; left: 14px; right: 14px; display: none; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+#pills span { height: 38px; border-radius: 12px; background: rgba(13, 15, 18, .72); color: #FDE68A; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 14px; font-weight: 600; }
+#pills span::before { content: '×'; }
+#pills span.on { color: var(--fg); }
+#pills span.on::before { content: '✓'; color: #4ADE80; }
+#ring { position: absolute; inset: 0; display: none; border: 4px solid var(--red); border-radius: 28px; pointer-events: none; }
+
+.words { padding: 14px 8px 0; min-height: 84px; display: flex; flex-direction: column; gap: 3px; }
+.words h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.words p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.stats { margin: 8px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stats div { padding: 7px 10px; border-radius: 14px; background: var(--surf); }
+.stats dt { color: var(--muted); font-size: 12px; }
+.stats dd { margin: 0; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stats small { color: var(--muted); font-size: 11px; font-weight: 500; }
+#info { margin: 6px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
+.wide { height: 52px; flex: none; margin-top: 10px; border: 0; border-radius: 16px; background: var(--red); color: #FFFFFF; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+#saveClip { background: var(--surf); color: var(--fg); }
+.shutter { padding-top: 10px; display: none; flex-direction: column; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
+#shoot { position: relative; width: 82px; height: 82px; padding: 0; border: 4px solid #FFFFFF; border-radius: 999px; background: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+#shoot:disabled { opacity: .4; cursor: default; }
+#shoot .dot { width: 62px; height: 62px; border-radius: 999px; background: var(--red); }
+#shoot svg { position: absolute; top: -4px; left: -4px; display: none; transform: rotate(-90deg); }
+
+.debug #pills { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.debug #pHand { display: none; }
+html:not(.debug) .debug-only { display: none !important; }
+
+[data-state=ready] #guide, [data-state=count] #guide { display: block; }
+[data-state=count] #guide { opacity: .35; }
+[data-state=count] #cancel, [data-state=rec] #cancel { display: flex; }
+[data-state=count] #count, [data-state=rec] #tag { display: flex; }
+[data-state=ready] #pills { display: grid; }
+[data-state=rec] h1 { display: none; }
+[data-state=rec] #rec { display: flex; }
+[data-state=rec] #ring { display: block; }
+[data-state=ready] .shutter, [data-state=count] .shutter, [data-state=rec] .shutter, [data-state=done] .shutter { display: flex; }
+[data-state=count] #shoot { border-color: #5A5F68; }
+[data-state=count] #shoot .dot { background: #3A1416; }
+[data-state=rec] #shoot { border-color: #2C3038; }
+[data-state=rec] #shoot .dot { width: 30px; height: 30px; border-radius: 8px; background: #FFFFFF; }
+[data-state=rec] #shoot svg { display: block; }
 </style>
 </head>
 <body>
-<main>
+<main id="app" data-state="off">
   <header>
-    <h1>الكاميرا والنقاط</h1>
-    <nav aria-label="مكان تشغيل النموذج">
-      <a id="gpu" href="?delegate=GPU&auto=1">GPU</a>
-      <a id="cpu" href="?delegate=CPU&auto=1">CPU</a>
+    <button id="cancel" type="button" aria-label="إلغاء">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="#F2F3F5" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </button>
+    <h1 id="title"></h1>
+    <span id="rec"><i></i>يسجّل<b id="clock" dir="ltr">0:00</b></span>
+    <nav class="debug-only" aria-label="مكان تشغيل النموذج">
+      <a id="gpu" href="?delegate=GPU&auto=1&debug=1">GPU</a>
+      <a id="cpu" href="?delegate=CPU&auto=1&debug=1">CPU</a>
     </nav>
   </header>
   <section class="frame" aria-label="الكاميرا">
@@ -52,15 +101,39 @@ button[hidden] { display: none; }
       <video id="video" muted playsinline autoplay></video>
       <canvas id="points" aria-hidden="true"></canvas>
     </div>
+    <svg id="guide" viewBox="0 0 300 360" fill="none" aria-hidden="true">
+      <ellipse cx="150" cy="120" rx="54" ry="64" stroke="#F2F3F5" stroke-opacity=".7" stroke-width="2.5" stroke-dasharray="9 9"/>
+      <path d="M28 360c0-78 54-128 122-128s122 50 122 128" stroke="#F2F3F5" stroke-opacity=".7" stroke-width="2.5" stroke-dasharray="9 9"/>
+      <path d="M14 44V16h28M286 44V16h-28" stroke="#F2F3F5" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+    <div id="count"><b id="num">3</b><span>ارفع يدك</span></div>
     <p id="status" role="status"></p>
+    <p id="tag"><i></i>يتابع نقاط اليدين والجسم</p>
+    <div id="pills">
+      <span id="pHead">الرأس</span><span id="pShoulders">الكتفين</span><span id="pHand">يدك</span>
+      <span id="pRight" class="debug-only">اليمنى</span><span id="pLeft" class="debug-only">اليسرى</span>
+    </div>
+    <div id="ring" aria-hidden="true"></div>
   </section>
-  <dl class="stats">
+  <section class="words">
+    <h2 id="heading"></h2>
+    <p id="sub"></p>
+  </section>
+  <dl class="stats debug-only">
     <div><dt>السرعة</dt><dd><span id="fps">–</span> <small>إطار/ث</small></dd></div>
     <div><dt>الإطار الواحد</dt><dd><span id="ms">–</span> <small>ms</small></dd></div>
-    <div><dt>مقطع 6 ثوانٍ</dt><dd><span id="clip">–</span> <small>ث</small></dd></div>
+    <div><dt>مقطع 6 ثوانٍ</dt><dd><span id="clipSec">–</span> <small>ث</small></dd></div>
   </dl>
-  <p id="info">النقاط تتحسب داخل جهازك، وما يطلع منه شي: لا فيديو ولا نقاط.</p>
-  <button id="start" type="button">شغّل الكاميرا</button>
+  <p id="info" class="debug-only"></p>
+  <button id="saveClip" class="wide debug-only" type="button" hidden>احفظ النقاط</button>
+  <button id="start" class="wide" type="button">شغّل الكاميرا</button>
+  <div class="shutter">
+    <button id="shoot" type="button" aria-label="ابدأ التسجيل">
+      <span class="dot"></span>
+      <svg width="82" height="82" viewBox="0 0 82 82" fill="none" aria-hidden="true"><circle id="arc" cx="41" cy="41" r="38" stroke="#E81C25" stroke-width="5" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/></svg>
+    </button>
+    <span id="shootLabel"></span>
+  </div>
 </main>
 <script src="vendor/holistic/holistic.js"></script>
 <script src="camera.js"></script>
