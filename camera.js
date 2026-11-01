@@ -1,12 +1,14 @@
 // The camera screens of the app (app_design/gen_canvas.py): frame check, count, recording. The points are computed while filming
 // (AI_PLAN.md 7.11 هـ), one row per frame with its time, in the layout of tools/browser_kp/extract.js: 86 points in pixels, right hand 0-20,
 // left hand 21-41, lips 42-60 stay zero, body 61-85 = the first 25 pose points. Same MediaPipe and same settings as there.
-// No face points are drawn, no video is kept, and nothing leaves the device yet: the server link comes next.
+// No face points are drawn and no video is kept. Only the points of a finished clip leave the device, to the reading service (server/app.py).
 // ?debug=1 shows the speed, the CPU switch, each hand apart and a button that saves the points, ?delegate=CPU runs the model on the
-// processor, ?auto=1 starts without the button.
+// processor, ?auto=1 starts without the button, and with debug on ?reader= points the page at another service.
 const q = new URLSearchParams(location.search);
 const DELEGATE = q.get('delegate') === 'CPU' ? 'CPU' : 'GPU';
 const DEBUG = q.get('debug') === '1';
+const READER = (DEBUG && q.get('reader')) || 'https://desktop-ml7pp1m.tailb7b8be.ts.net';
+const READ_TRIES = 3, READ_WAIT = 800, READ_MS = 20000;  // the service answers 503 while it is full, so it gets a few tries
 const MODEL_DIR = 'vendor/holistic/';
 const POSE_N = 25;
 const VIS_IDX = [0, 11, 12];                          // nose and shoulders, the frame rule looks at these
@@ -20,6 +22,7 @@ const BODY = [[11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 2
 const HAND = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12], [9, 13], [13, 14],
               [14, 15], [15, 16], [13, 17], [17, 18], [18, 19], [19, 20], [0, 17]];
 const LINE = '#F2F3F5', BODY_DOT = '#FF9DA1', HAND_DOT = '#FF6B72';
+const NOT_SEEN = 'راسك وكتفيك ما بانوا كفاية';
 const CAMERA_ERRORS = {
   NotAllowedError: 'ما انسمح للكاميرا. افتح إذن الكاميرا من إعدادات المتصفح.',
   NotFoundError: 'ما لقينا كاميرا في هذا الجهاز.',
@@ -31,12 +34,13 @@ const SCREENS = {
   ready: ['جهّز الكاميرا', 'أشّر الجملة كاملة', 'امسك الجوال بيد وأشّر بالثانية، أو اسنده وأشّر بيدينك. مثل: «بيت حريق».', 'ابدأ، ونعد لك 3'],
   count: ['استعد', 'نبدأ بعد العد', 'لما يصير الإطار أحمر، يعني نسجّل. أشّر الجملة وبعدين اضغط انتهيت.', ''],
   rec: ['', 'أشّر الحين', '', 'انتهيت'],
+  read: ['نقرأ الإشارة', 'لحظة، نقرأ إشارتك', 'نرسل النقاط بس، والفيديو ما يطلع من جوالك.', ''],
   done: ['انتهى التسجيل', '', '', 'سجّل مرة ثانية'],
 };
 
 const $ = (id) => document.getElementById(id);
 const video = $('video'), canvas = $('points'), ctx = canvas.getContext('2d');
-window.__live = {state: 'off', delegate: DELEGATE, frames: 0, fps: 0, ms: 0, load_ms: 0, error: null, last: null, clip: null};
+window.__live = {state: 'off', delegate: DELEGATE, frames: 0, fps: 0, ms: 0, load_ms: 0, error: null, last: null, clip: null, result: null, read_ms: 0, read_error: null};
 let state = 'off', rows = null, frameTime = 0, recStart = 0, clock = null, counter = null;
 
 function go(next) {
@@ -47,7 +51,7 @@ function go(next) {
   $('heading').textContent = heading;
   $('sub').textContent = sub;
   $('shootLabel').textContent = label;
-  $('shoot').disabled = false;
+  $('shoot').disabled = next === 'ready' && window.__live.frames < WARMUP;
   $('shoot').setAttribute('aria-label', next === 'rec' ? 'إيقاف التسجيل' : next === 'count' ? 'ابدأ الحين' : 'ابدأ التسجيل');
   if (next !== 'ready') setStatus('');
   if (next === 'ready') $('saveClip').hidden = true;
@@ -114,7 +118,9 @@ function frameCheck(vis, res) {
   $('pRight').classList.toggle('on', right);
   $('pLeft').classList.toggle('on', left);
   if (state !== 'ready') return;
-  $('shoot').disabled = !(head && shoulders);        // the app does not start without the head and the shoulders (AI_PLAN.md section 5)
+  const warm = window.__live.frames >= WARMUP;       // a slow device could otherwise record before its first frames are out
+  $('shoot').disabled = !(warm && head && shoulders); // the app does not start without the head and the shoulders (AI_PLAN.md section 5)
+  if (!warm) return setStatus('لحظة، نجهّز الكاميرا');
   const [, heading, sub] = SCREENS.ready;
   if (!head || !shoulders) setStatus('ابعد الجوال شوي', 'bad');
   else setStatus(hand ? 'جاهز، كل شي ظاهر' : 'ما نشوف يدك', hand ? 'ok' : 'bad');
@@ -211,10 +217,41 @@ function finish() {
   window.__live.clip = {width: W, height: H, delegate: DELEGATE, frames: T, seconds: sec, frame_rule: pass, right: seen(0), left: seen(21),
                         t_ms: rows.t.map(Math.round), kp: rows.kp.flatMap((k) => Array.from(k, (x) => Math.round(x * 100) / 100)),
                         vis: rows.vis.flatMap((v) => Array.from(v, (x) => Math.round(x * 1e4) / 1e4))};
+  if (pass) readClip();
+  else showDone(NOT_SEEN, 'ابعد الجوال شوي وسجّل مرة ثانية. ما انرسل شي.');
+}
+
+function showDone(heading, sub) {
   go('done');
-  $('heading').textContent = pass ? 'انسجل المقطع' : 'راسك وكتفيك ما بانوا كفاية';
-  $('sub').textContent = `${T} إطار في ${sec.toFixed(1)} ث · ما انحفظ فيديو، ولسا ما انرسل شي.` + (pass ? '' : ' ابعد الجوال شوي وسجّل مرة ثانية.');
+  $('heading').textContent = heading;
+  $('sub').textContent = sub;
   $('saveClip').hidden = false;
+}
+
+async function ask(body) {
+  for (let i = 1; ; i++) {
+    const r = await fetch(`${READER}/analyze`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body, signal: AbortSignal.timeout(READ_MS)});
+    if (r.ok) return r.json();
+    if (r.status !== 503 || i === READ_TRIES) throw new Error(`service ${r.status}`);
+    await new Promise((res) => setTimeout(res, READ_WAIT));
+  }
+}
+
+async function readClip() {
+  const live = window.__live, {t_ms, kp, vis, frames, seconds} = live.clip, t0 = performance.now();
+  go('read');
+  live.result = live.read_error = null;
+  try {
+    const out = live.result = await ask(JSON.stringify({t_ms, kp, vis}));
+    live.read_ms = performance.now() - t0;
+    if (out.report) showDone(`قرأناها: ${out.type_ar}`, 'هذي تجربة، وما انرسل شي لأي جهة.');
+    else if (!out.frame_ok) showDone(NOT_SEEN, 'ابعد الجوال شوي وسجّل مرة ثانية.');
+    else showDone('ما قرأنا بلاغ', 'أشّر الجملة كاملة وسجّل مرة ثانية.');
+    $('info').textContent = `${frames} إطار في ${seconds.toFixed(1)} ث · الرد ${Math.round(live.read_ms)} ms · p(normal) ${out.p_normal.toFixed(3)} · ${out.words || 'بدون كلمات'}`;
+  } catch (e) {
+    live.read_error = String(e);
+    showDone('ما وصلنا للخادم', 'شيّك على النت وسجّل مرة ثانية.');
+  }
 }
 
 function saveClip() {
@@ -227,10 +264,12 @@ function saveClip() {
 
 // The next frame the camera gives, so one frame is never counted twice on a fast device.
 const nextFrame = () => new Promise((res) => (video.requestVideoFrameCallback ? video.requestVideoFrameCallback(res) : requestAnimationFrame(res)));
+const hasWebGL = () => { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); };
 
 async function start() {
   $('start').hidden = true;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return fail('الكاميرا تشتغل على رابط https بس.');
+  if (!hasWebGL()) return fail('هذا المتصفح ما يشغّل قراءة الإشارة. جرّب متصفح ثاني.');  // MediaPipe needs it even on the CPU option
   go('load');
   setStatus('نفتح الكاميرا');
   try {
