@@ -10,6 +10,12 @@ const DEBUG = q.get('debug') === '1';
 const READER = (DEBUG && q.get('reader')) || 'https://desktop-ml7pp1m.tailb7b8be.ts.net';
 const READ_TRIES = 3, READ_WAIT = 800, READ_MS = 20000;  // the service answers 503 while it is full, so it gets a few tries
 const MODEL_DIR = 'vendor/holistic/';
+const CACHE = 'holistic-0.5.1675471629';              // the copy on the phone, sw.js serves from it
+const SIMD = !!window.WebAssembly && WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11]));
+const FILES = {'holistic.js': 78139, 'holistic.binarypb': 1741, 'holistic_solution_packed_assets_loader.js': 9786,
+               'holistic_solution_packed_assets.data': 16877755, 'pose_landmark_full.tflite': 6440512,
+               ...(SIMD ? {'holistic_solution_simd_wasm_bin.js': 276482, 'holistic_solution_simd_wasm_bin.wasm': 6511073}
+                        : {'holistic_solution_wasm_bin.js': 276477, 'holistic_solution_wasm_bin.wasm': 6400002})};
 const POSE_N = 25;
 const VIS_IDX = [0, 11, 12];                          // nose and shoulders, the frame rule looks at these
 const VIS_MIN = 0.5, FRAME_SHARE = 0.8;               // the frame rule of tools/browser_kp/compare.py
@@ -40,8 +46,8 @@ const SCREENS = {
 
 const $ = (id) => document.getElementById(id);
 const video = $('video'), canvas = $('points'), ctx = canvas.getContext('2d');
-window.__live = {state: 'off', delegate: DELEGATE, frames: 0, fps: 0, ms: 0, load_ms: 0, error: null, last: null, clip: null, result: null, read_ms: 0, read_error: null};
-let state = 'off', rows = null, frameTime = 0, recStart = 0, clock = null, counter = null;
+window.__live = {state: 'off', delegate: DELEGATE, frames: 0, fps: 0, ms: 0, load_ms: 0, files_ms: 0, model_ms: 0, cache_error: null, error: null, last: null, clip: null, result: null, read_ms: 0, read_error: null};
+let state = 'off', rows = null, frameTime = 0, recStart = 0, clock = null, counter = null, model = null, prep = '';
 
 function go(next) {
   state = window.__live.state = next;
@@ -53,13 +59,19 @@ function go(next) {
   $('shootLabel').textContent = label;
   $('shoot').disabled = next === 'ready' && window.__live.frames < WARMUP;
   $('shoot').setAttribute('aria-label', next === 'rec' ? 'إيقاف التسجيل' : next === 'count' ? 'ابدأ الحين' : 'ابدأ التسجيل');
-  if (next !== 'ready') setStatus('');
+  if (next !== 'ready') setStatus(next === 'off' || next === 'load' ? prep : '');
   if (next === 'ready') $('saveClip').hidden = true;
 }
 
 function setStatus(text, kind = '') {
   $('status').textContent = text;
   $('status').className = kind;
+}
+
+// What the background loading is doing, shown only on the screens before the camera, and never over an error.
+function setPrep(text, kind) {
+  prep = text;
+  if ((state === 'off' || state === 'load') && $('status').className !== 'bad') setStatus(text, kind);
 }
 
 function fail(text, e) {
@@ -155,7 +167,8 @@ function note(ms, t0) {
   if (++live.frames === 1) {
     live.load_ms = performance.now() - t0;
     go('ready');
-    $('info').textContent = `الكاميرا ${video.videoWidth}×${video.videoHeight} · ${DELEGATE} · جهز بعد ${(live.load_ms / 1000).toFixed(1)} ث`;
+    const sec = (ms) => (ms / 1000).toFixed(1);
+    $('info').textContent = `الكاميرا ${video.videoWidth}×${video.videoHeight} · ${DELEGATE} · جهز بعد ${sec(live.load_ms)} ث · الملفات ${sec(live.files_ms)} · النموذج ${sec(live.model_ms)}`;
   }
   if (live.frames <= WARMUP) return;
   spent.push(ms);
@@ -266,12 +279,68 @@ function saveClip() {
 const nextFrame = () => new Promise((res) => (video.requestVideoFrameCallback ? video.requestVideoFrameCallback(res) : requestAnimationFrame(res)));
 const hasWebGL = () => { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); };
 
+// The page needs sw.js in control before MediaPipe asks for its files, or the first open would not use the copy.
+async function startWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  await navigator.serviceWorker.register('sw.js');
+  await navigator.serviceWorker.ready;
+  if (!navigator.serviceWorker.controller) await new Promise((res) => {
+    navigator.serviceWorker.addEventListener('controllerchange', res, {once: true});
+    setTimeout(res, 2000);
+  });
+}
+
+// Downloads what is missing into the copy, one whole file at a time, so a broken download leaves nothing half kept.
+async function fillCache() {
+  const cache = await caches.open(CACHE), names = Object.keys(FILES);
+  const have = await Promise.all(names.map((n) => cache.match(MODEL_DIR + n)));
+  const missing = names.filter((_, i) => !have[i]), total = names.reduce((a, n) => a + FILES[n], 0);
+  let done = total - missing.reduce((a, n) => a + FILES[n], 0), shown = -1;
+  await Promise.all(missing.map(async (name) => {
+    const res = await fetch(MODEL_DIR + name), chunks = [], reader = res.body.getReader();
+    if (!res.ok) throw new Error(`${name} ${res.status}`);
+    for (;;) {
+      const {done: end, value} = await reader.read();
+      if (end) break;
+      chunks.push(value);
+      done += value.length;
+      const pct = Math.min(Math.floor(100 * done / total), 99);
+      if (pct !== shown) setPrep(`نحمّل التطبيق ${shown = pct}%`);
+    }
+    await cache.put(MODEL_DIR + name, new Response(new Blob(chunks), {headers: {'Content-Type': res.headers.get('Content-Type')}}));
+  }));
+}
+
+async function prepare() {
+  const live = window.__live, t0 = performance.now();
+  try {
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    await startWorker();
+    await fillCache();
+  } catch (e) {
+    live.cache_error = String(e);                     // the model can still come straight from the site
+  }
+  const t1 = performance.now();
+  live.files_ms = t1 - t0;
+  setPrep('نشغّل النموذج');
+  const holistic = new window.Holistic({locateFile: (f) => MODEL_DIR + f});
+  holistic.setOptions({modelComplexity: 1, smoothLandmarks: true, enableSegmentation: false, refineFaceLandmarks: false,
+                       minDetectionConfidence: 0.5, minTrackingConfidence: 0.5, selfieMode: false,
+                       useCpuInference: DELEGATE === 'CPU'});
+  holistic.onResults(draw);
+  await holistic.initialize();
+  live.model_ms = performance.now() - t1;
+  setPrep(state === 'off' ? 'جاهز' : '', 'ok');
+  prep = '';
+  return holistic;
+}
+
 async function start() {
   $('start').hidden = true;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return fail('الكاميرا تشتغل على رابط https بس.');
   if (!hasWebGL()) return fail('هذا المتصفح ما يشغّل قراءة الإشارة. جرّب متصفح ثاني.');  // MediaPipe needs it even on the CPU option
   go('load');
-  setStatus('نفتح الكاميرا');
+  setStatus(prep || 'نفتح الكاميرا');
   try {
     video.srcObject = await navigator.mediaDevices.getUserMedia({audio: false, video: {
       facingMode: 'user', width: {ideal: 1280}, height: {ideal: 720}, frameRate: {ideal: 30}}});
@@ -279,15 +348,11 @@ async function start() {
   } catch (e) {
     return fail(CAMERA_ERRORS[e.name] || 'ما قدرنا نفتح الكاميرا.', e);
   }
-  setStatus('نحمّل النموذج، أول مرة حوالي 21 MB');
+  setStatus(prep);
   const t0 = performance.now();
   try {
-    const holistic = new window.Holistic({locateFile: (f) => MODEL_DIR + f});
-    holistic.setOptions({modelComplexity: 1, smoothLandmarks: true, enableSegmentation: false, refineFaceLandmarks: false,
-                         minDetectionConfidence: 0.5, minTrackingConfidence: 0.5, selfieMode: false,
-                         useCpuInference: DELEGATE === 'CPU'});
-    holistic.onResults(draw);
-    await holistic.initialize();
+    const holistic = await (model || (model = prepare()));
+    setStatus('نجهّز الكاميرا');
     for (;;) {
       await nextFrame();
       frameTime = performance.now();
@@ -295,6 +360,7 @@ async function start() {
       note(performance.now() - frameTime, t0);
     }
   } catch (e) {
+    model = null;
     fail('النموذج ما اشتغل على هذا الجهاز.', e);
   }
 }
@@ -315,6 +381,7 @@ function cancel() {
 if (DEBUG) document.documentElement.classList.add('debug');
 $(DELEGATE.toLowerCase()).setAttribute('aria-current', 'true');
 go('off');
+if (hasWebGL()) (model = prepare()).catch(() => { model = null; });  // loads as soon as the page opens, so the wait is not at the moment of need
 $('start').addEventListener('click', start);
 $('shoot').addEventListener('click', shutter);
 $('cancel').addEventListener('click', cancel);
