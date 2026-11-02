@@ -1,30 +1,321 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>يد بيد: الكاميرا</title>
-<link rel="icon" href="data:,">
+<meta name="theme-color" content="#FFFFFF">
+<title>يد بيد</title>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #0D0F12; --surf: #171A1F; --line: #262A31; --muted: #A3A9B3; --fg: #F2F3F5; --red: #E81C25; }
+/* Tokens from app_design/gen_canvas.py. Light screens use rem so "نص أكبر" in the profile can scale them; the camera keeps px. */
+:root {
+  --ink: #111418; --muted: #5E6470; --line: #E6E8EC; --surf: #F4F5F7; --bg: #FFFFFF;
+  --red: #E81C25; --redtxt: #C4121B; --redt1: #FDECEC; --redt2: #FEF6F6; --green: #15803D; --greent: #E7F5EC;
+  --amb: #8A5300; --ambt: #FFF4DB; --ambd: #5C3A00; --dash: #C9CDD4;
+  --dbg: #0D0F12; --dsurf: #171A1F; --dline: #262A31; --dmuted: #A3A9B3; --dfg: #F2F3F5;
+  /* the old camera names, so its rules below read as before */
+  --surfd: var(--dsurf); --fg: var(--dfg);
+}
+[data-ag=rc] { --ag: #C4121B; --tint: #FDEDEE; }
+[data-ag=cd] { --ag: #B4440B; --tint: #FEF0E6; }
+[data-ag=po] { --ag: #1E4FD0; --tint: #EBF0FD; }
+[data-ag=tr] { --ag: #0E7068; --tint: #E5F3F1; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; }
-main { height: 100vh; height: 100dvh; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column;
-       padding: calc(14px + env(safe-area-inset-top)) 16px calc(14px + env(safe-area-inset-bottom)); }
-header { min-height: 44px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
-#cancel { justify-self: start; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 999px; background: var(--surf); display: none; align-items: center; justify-content: center; cursor: pointer; }
-h1 { grid-column: 2; margin: 0; font-size: 16px; font-weight: 600; }
+html { font-size: 100%; -webkit-text-size-adjust: 100%; }
+html.big { font-size: 112.5%; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; }
+html[data-theme=dark], html[data-theme=dark] body { background: var(--dbg); color: var(--dfg); }
+body { -webkit-tap-highlight-color: transparent; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; }
+:focus-visible { outline: 3px solid #2563EB; outline-offset: 2px; }
+h1:focus, h2:focus { outline: none; }
+bdi { unicode-bidi: isolate; }
+.i { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- light screens ---------- */
+.scr { min-height: 100vh; min-height: 100dvh; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column;
+       padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+.pad { padding-inline: 20px; }
+.actions { margin-top: auto; padding: 24px 20px 26px; display: flex; flex-direction: column; gap: 10px; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.primary { min-height: 60px; width: 100%; padding: 8px 16px; border: 0; border-radius: 18px; background: var(--red); color: #FFFFFF;
+           display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.25rem; font-weight: 700;
+           box-shadow: 0 12px 26px -10px rgba(232, 28, 37, .55); }
+.primary .i { width: 20px; height: 20px; stroke-width: 2.2; }
+.primary:disabled { opacity: .6; }
+.ghost { min-height: 52px; width: 100%; padding: 6px 12px; border: 1.5px solid var(--line); border-radius: 16px; background: none; color: var(--ink);
+         display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; font-weight: 600; text-align: center; }
+.ghost .i { width: 17px; height: 17px; }
+.dark-btn { min-height: 56px; width: 100%; border: 0; border-radius: 16px; background: var(--ink); color: #FFFFFF; font-size: 1rem; font-weight: 600; }
+.primary:active, .ghost:active, .tile:active, .choice:active, .dark-btn:active, .sign:active { transform: scale(.98); }
+.round { width: 44px; height: 44px; padding: 0; border: 0; border-radius: 999px; background: var(--surf); color: var(--ink);
+         display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.round .i { stroke-width: 2.2; }
+.bar { padding: 16px 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 60px; }
+.bar h1 { margin: 0; font-size: 1rem; font-weight: 600; }
+.bar .spacer { width: 44px; }
+.privacy { margin: 0; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: .75rem; color: var(--muted); text-align: center; }
+.privacy .i { width: 14px; height: 14px; }
+.label { font-size: .875rem; font-weight: 600; color: var(--muted); }
+.big-title { margin: 0; font-size: 1.625rem; font-weight: 700; line-height: 1.35; }
+.lead { margin: 0; font-size: 1rem; line-height: 1.6; color: var(--muted); }
+.note { margin: 0; font-size: .875rem; line-height: 1.6; color: var(--muted); }
+.center-col { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 0 24px; }
+.center-col .lead { max-width: 320px; }
+.demo { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--ambt); color: var(--ambd); display: flex; align-items: flex-start; gap: 8px;
+        font-size: .8125rem; line-height: 1.55; font-weight: 500; }
+.demo .i { width: 16px; height: 16px; margin-top: 2px; color: var(--amb); }
+
+/* Main */
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand img { width: 46px; height: 37px; object-fit: contain; }
+.brand b { display: block; font-size: 1.25rem; font-weight: 700; line-height: 1.25; }
+.brand span { display: block; font-size: .75rem; color: var(--muted); }
+.main-top { padding: 20px 20px 0; display: flex; align-items: center; justify-content: space-between; }
+#toProfile { font-size: 1rem; font-weight: 600; }
+.pills { margin-top: 14px; padding: 0 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.pill { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 6px 13px; border: 0; border-radius: 999px; background: var(--surf);
+        color: var(--ink); font-size: .875rem; font-weight: 500; }
+.pill .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--dash); }
+.pill[data-loc=ok] .dot { background: var(--green); box-shadow: 0 0 0 3px var(--greent); }
+.pill[data-loc=fail] .dot { background: #D97706; }
+.pill[data-loc=pending] .dot { animation: pulse 1.2s ease-in-out infinite; }
+.pill .sub { color: var(--muted); }
+.pill.amber { background: var(--ambt); color: var(--ambd); font-size: .75rem; font-weight: 600; }
+.hero { padding: clamp(16px, 3.5vh, 30px) 24px 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+.hero h1 { margin: 0; font-size: 2rem; font-weight: 700; line-height: 1.25; }
+.hero p { margin: 0; font-size: 1rem; line-height: 1.65; color: var(--muted); max-width: 300px; }
+.sign-wrap { display: flex; justify-content: center; padding-top: clamp(30px, 5vh, 42px); }
+.sign { width: 200px; height: 200px; border: 0; border-radius: 999px; background: var(--red); color: #FFFFFF; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 6px; font-size: 1.25rem; font-weight: 700;
+        box-shadow: 0 0 0 14px var(--redt1), 0 0 0 28px var(--redt2), 0 22px 44px -8px rgba(232, 28, 37, .45); }
+.sign svg { height: 112px; width: auto; }
+.prep { margin: clamp(34px, 5vh, 44px) auto 0; padding: 0 24px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+        font-size: .875rem; color: var(--muted); text-align: center; }
+.prep .track { width: 180px; height: 4px; border-radius: 999px; background: var(--surf); overflow: hidden; }
+.prep .track i { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--red); transition: width .3s; }
+.quick { padding: clamp(22px, 3.5vh, 32px) 20px 0; display: flex; flex-direction: column; gap: 10px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.tile { height: 80px; padding: 0 4px; border: 0; border-radius: 16px; background: var(--tint, var(--surf)); color: var(--ink);
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-align: center;
+        font-size: .875rem; font-weight: 600; line-height: 1.3; }
+.tile .i { width: 22px; height: 22px; color: var(--ag, var(--ink)); }
+.main-foot { margin-top: auto; padding: 24px 20px 24px; }
+
+/* Permission */
+.perm-art { margin: 20px 20px 0; height: 250px; border-radius: 28px; background: var(--surf); position: relative; overflow: hidden;
+            display: flex; align-items: flex-end; justify-content: center; }
+.perm-art .brand { position: absolute; top: 16px; right: 18px; gap: 8px; }
+.perm-art .brand img { width: 36px; height: 29px; }
+.perm-art .brand b { font-size: 1rem; }
+.perm-art > svg { width: 100%; max-width: 350px; height: auto; }
+.feats { padding: 22px 24px 0; display: flex; flex-direction: column; gap: 16px; }
+.feat { display: flex; gap: 14px; align-items: flex-start; }
+.feat > span { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: var(--surf); display: flex; align-items: center; justify-content: center; }
+.feat b { display: block; font-size: 1rem; font-weight: 600; padding-top: 1px; }
+.feat p { margin: 1px 0 0; font-size: .875rem; line-height: 1.55; color: var(--muted); }
+
+/* Reading */
+.ring { width: 148px; height: 148px; position: relative; display: flex; align-items: center; justify-content: center; }
+.ring > svg:first-child { position: absolute; inset: 0; }
+.ring .arc { transform-origin: 74px 74px; animation: spin 1.4s linear infinite; }
+#s-read[data-mode=slow] .ring .arc, #s-read[data-mode=fail] .ring .arc { animation: none; stroke: #D97706; }
+.ring .clock { display: none; width: 56px; height: 56px; stroke-width: 1.8; color: var(--amb); }
+#s-read[data-mode=slow] .ring .clock, #s-read[data-mode=fail] .ring .clock { display: block; }
+#s-read[data-mode=slow] .ring .hand, #s-read[data-mode=fail] .ring .hand { display: none; }
+#s-read .center-col { padding-top: clamp(32px, 8vh, 70px); }
+#s-read h1 { margin-top: 22px; }
+.steps { margin: 30px 0 0; padding: 0 36px; list-style: none; display: flex; flex-direction: column; }
+.steps li { display: flex; gap: 14px; }
+.steps .rail { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.steps .mark { width: 28px; height: 28px; border-radius: 999px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
+.steps .line { width: 2px; flex-grow: 1; min-height: 22px; background: var(--line); }
+.steps .txt { display: flex; flex-direction: column; padding: 2px 0 14px; }
+.steps li:last-child .txt { padding-bottom: 0; }
+.steps b { font-size: 1rem; font-weight: 600; }
+.steps span.s { font-size: .875rem; color: var(--muted); }
+.steps .done .mark { background: var(--green); color: #FFFFFF; }
+.steps .done .mark .i { width: 15px; height: 15px; stroke-width: 3; }
+.steps .done .line { background: var(--green); }
+.steps .now .mark { border: 2px solid var(--now, var(--red)); }
+.steps .now .mark::after { content: ''; width: 10px; height: 10px; border-radius: 999px; background: var(--now, var(--red)); }
+.steps .now span.s { color: var(--nowtxt, var(--redtxt)); }
+.steps .todo .mark { border: 2px dashed var(--dash); }
+.steps .todo b { color: var(--muted); }
+#s-read[data-mode=slow], #s-read[data-mode=fail] { --now: #D97706; --nowtxt: var(--amb); }
+#s-read[data-mode=wait] .slow-only, #s-read:not([data-mode=wait]) .wait-only { display: none; }
+
+/* Confirm */
+.head { padding: 22px 20px 0; display: flex; flex-direction: column; gap: 4px; }
+.kicker { display: flex; align-items: center; gap: 6px; font-size: .875rem; font-weight: 600; color: var(--muted); }
+.kicker .i { width: 16px; height: 16px; stroke-width: 2.4; }
+.kicker[data-src=sign] { color: var(--green); }
+.type-card { margin: 16px 20px 0; padding: 22px; border-radius: 24px; background: var(--tint); display: flex; align-items: center; gap: 16px; }
+.type-card .ticon { width: 66px; height: 66px; flex-shrink: 0; border-radius: 20px; background: #FFFFFF; color: var(--ag); display: flex; align-items: center; justify-content: center; }
+.type-card .ticon .i { width: 34px; height: 34px; }
+.type-card b { display: block; font-size: 2rem; font-weight: 700; line-height: 1.15; }
+.ag-chip { display: inline-block; margin-top: 6px; padding: 4px 11px; border-radius: 999px; background: #FFFFFF; color: var(--ag); font-size: .875rem; font-weight: 600; }
+.gloss { margin: 18px 20px 0; display: flex; flex-direction: column; gap: 10px; }
+.chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chips span { padding: 6px 13px; border-radius: 10px; background: var(--surf); font-size: 1rem; font-weight: 600; }
+.rows { margin: 18px 20px 0; border-top: 1px solid var(--line); }
+.row { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row > div { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+.row b { font-size: .875rem; font-weight: 600; }
+.row span { font-size: .75rem; color: var(--muted); overflow-wrap: anywhere; }
+.row .pin-ok { color: var(--green); }
+.row .pin-wait { color: var(--dash); }
+.row .med { color: var(--redtxt); }
+.link { min-height: 44px; padding: 0 6px; border: 0; background: none; color: var(--redtxt); font-size: .875rem; font-weight: 600; }
+.amber-box { margin: 14px 0; padding: 14px; border-radius: 18px; background: var(--ambt); display: flex; flex-direction: column; gap: 10px; }
+.amber-box .ab { display: flex; gap: 10px; align-items: flex-start; color: var(--amb); }
+.amber-box b { display: block; font-size: .875rem; font-weight: 600; color: var(--ambd); }
+.amber-box p { margin: 2px 0 0; font-size: .75rem; line-height: 1.55; color: var(--amb); }
+.amber-box .abrow { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+.mini { min-height: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: #FFFFFF; color: var(--ink); display: flex; align-items: center; gap: 6px;
+        font-size: .875rem; font-weight: 600; white-space: nowrap; }
+.mini .i { width: 16px; height: 16px; }
+.amber-box input { width: 100%; height: 44px; border-radius: 12px; border: 1.5px solid #EED7A6; background: #FFFFFF; padding: 0 12px; font-size: .875rem; color: var(--ink); }
+.sending .primary { opacity: .7; }
+
+/* Unsure */
+.amber-chip { align-self: flex-start; display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: var(--ambt); color: var(--amb);
+              font-size: .75rem; font-weight: 600; }
+.amber-chip .i { width: 14px; height: 14px; }
+.choices { margin: 20px 20px 0; display: flex; flex-direction: column; gap: 12px; }
+.choice { width: 100%; display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 20px; border: 1.5px solid var(--line); background: none; color: var(--ink); text-align: right; }
+.choice .ticon { width: 56px; height: 56px; flex-shrink: 0; border-radius: 16px; background: var(--tint); color: var(--ag); display: flex; align-items: center; justify-content: center; }
+.choice .ticon .i { width: 28px; height: 28px; }
+.choice > span:nth-child(2) { flex-grow: 1; display: flex; flex-direction: column; gap: 2px; }
+.choice b { font-size: 1.25rem; font-weight: 700; line-height: 1.2; }
+.choice small { font-size: .875rem; color: var(--muted); }
+.choice > .i { color: var(--muted); }
+.with { margin: 18px 20px 0; padding: 14px 16px; border-radius: 16px; background: var(--surf); display: flex; flex-direction: column; gap: 3px; }
+.with span { font-size: .875rem; color: var(--muted); }
+.with b { font-size: .875rem; font-weight: 600; }
+
+/* Types */
+.groups { padding: 22px 20px 0; display: flex; flex-direction: column; gap: 22px; }
+.group { display: flex; flex-direction: column; gap: 10px; }
+.group-head { display: flex; align-items: center; justify-content: space-between; }
+.group h2 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 700; }
+.group h2::before { content: ''; width: 10px; height: 10px; border-radius: 3px; background: var(--ag); }
+.group-head bdi { font-size: .875rem; font-weight: 600; color: var(--ag); font-variant-numeric: tabular-nums; }
+.grid6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.grid6 .tile { height: 86px; }
+.grid6 .tile .i { width: 24px; height: 24px; }
+
+/* Sent and not sent */
+.badge { width: 84px; height: 84px; border-radius: 999px; background: var(--green); color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 12px var(--greent); }
+.badge .i { width: 42px; height: 42px; stroke-width: 2.6; }
+.badge.amb { width: 80px; height: 80px; background: var(--ambt); color: var(--amb); box-shadow: none; }
+.badge.amb .i { width: 38px; height: 38px; stroke-width: 2; }
+#s-sent .center-col, #s-failed .center-col { padding-top: clamp(28px, 5vh, 40px); }
+#s-sent h1 { margin-top: 22px; }
+#s-failed h1 { margin-top: 20px; }
+.kv { margin: 20px 20px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.kv div { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.kv span { font-size: .75rem; color: var(--muted); }
+.kv b { font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; }
+.concept { margin: 18px 20px 0; padding: 14px 16px; border-radius: 20px; border: 1.5px dashed var(--dash); display: flex; flex-direction: column; gap: 10px; }
+.concept .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.concept .tag { padding: 3px 10px; border-radius: 999px; background: var(--surf); font-size: .75rem; font-weight: 700; color: var(--muted); }
+.concept .top small { font-size: .75rem; color: var(--muted); }
+.concept p { margin: 0; display: flex; align-items: center; gap: 8px; font-size: .875rem; font-weight: 500; }
+.concept p .i { width: 18px; height: 18px; }
+.retry { margin: 18px 20px 0; padding: 12px 16px; border-radius: 16px; background: var(--surf); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.retry b { display: flex; align-items: center; gap: 8px; font-size: .875rem; font-weight: 600; }
+.retry b .i { width: 18px; height: 18px; }
+.retry small { font-size: .75rem; color: var(--muted); }
+.show { margin: 20px 20px 0; display: flex; flex-direction: column; gap: 10px; }
+.card { padding: 20px; border-radius: 22px; background: var(--ink); color: #FFFFFF; display: flex; flex-direction: column; gap: 10px; }
+.card .l1 { font-size: 1.625rem; font-weight: 700; line-height: 1.35; }
+.card .l2 { font-size: 1.25rem; font-weight: 600; line-height: 1.45; }
+.card .l2 bdi { color: #FF9DA1; }
+.card .l3 { display: flex; align-items: center; gap: 6px; font-size: .875rem; color: var(--dash); }
+.card .l3 .i { width: 16px; height: 16px; }
+#s-show { background: var(--dbg); color: #FFFFFF; }
+#s-show .round { background: var(--dsurf); color: var(--dfg); }
+#s-show .card { margin: 12px 16px 0; padding: 24px 20px; background: none; gap: 18px; }
+#s-show .card .l1 { font-size: 2.25rem; line-height: 1.3; }
+#s-show .card .l2 { font-size: 1.625rem; }
+#s-show .card .l3 { font-size: 1rem; }
+
+/* Camera blocked */
+.cam-off { width: 88px; height: 88px; border-radius: 28px; background: var(--surf); display: flex; align-items: center; justify-content: center; }
+.cam-off .i { width: 40px; height: 40px; stroke-width: 1.8; }
+#s-denied h1 { margin-top: 20px; }
+.how { margin: 26px 20px 0; padding: 18px; border-radius: 20px; border: 1.5px solid var(--line); display: flex; flex-direction: column; gap: 12px; }
+.how ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.how li { display: flex; align-items: center; gap: 12px; font-size: 1rem; }
+.how li > span:first-child { width: 28px; height: 28px; flex-shrink: 0; border-radius: 999px; background: var(--surf); display: flex; align-items: center; justify-content: center; font-size: .875rem; font-weight: 700; }
+.how li .i { width: 16px; height: 16px; vertical-align: -2px; }
+
+/* Profile */
+.who { padding: 20px 20px 0; display: flex; align-items: center; gap: 14px; }
+.avatar { width: 58px; height: 58px; flex-shrink: 0; border-radius: 999px; background: var(--redt1); color: var(--redtxt); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; }
+.who > div { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+.who input { width: 100%; border: 0; padding: 2px 0; background: none; }
+.who #pName { font-size: 1.25rem; font-weight: 700; }
+.who #pPhone { font-size: .875rem; color: var(--muted); direction: ltr; text-align: right; }
+.state { padding: 4px 10px; border-radius: 999px; background: var(--ambt); color: var(--amb); font-size: .75rem; font-weight: 600; white-space: nowrap; }
+.state.ok { background: var(--greent); color: #166534; }
+.psec { margin: 22px 20px 0; display: flex; flex-direction: column; }
+.psec + .psec { margin-top: 18px; }
+.psec .label { padding-bottom: 2px; }
+.field { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 50px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.field > span { font-size: .875rem; color: var(--muted); white-space: nowrap; }
+.field input, .field select { flex-grow: 1; min-width: 0; height: 40px; border: 0; background: none; padding: 0; text-align: left; font-size: .875rem; font-weight: 600; color: var(--ink); }
+.field select { text-align-last: left; -webkit-appearance: none; appearance: none; }
+.field input::placeholder { color: #9CA2AD; font-weight: 500; }
+.toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.toggle b { display: block; font-size: .875rem; font-weight: 600; }
+.toggle small { display: block; font-size: .75rem; color: var(--muted); }
+.toggle input { width: 22px; height: 22px; margin: 0; flex-shrink: 0; accent-color: var(--red); }
+.hands { padding: 13px 0; display: flex; flex-direction: column; gap: 10px; }
+.hands b { font-size: .875rem; font-weight: 600; }
+.hands small { font-size: .75rem; color: var(--muted); }
+.seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: var(--surf); }
+.seg label { height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: .875rem; font-weight: 500; color: var(--muted); }
+.seg label:has(input:checked) { background: #FFFFFF; color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(17, 20, 24, .12); }
+.seg input { margin: 0; accent-color: var(--red); }
+
+/* debug line on the light screens */
+#dbg { margin: 0; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #111418; color: #D5D9DF; font-size: 11px; }
+#dbg button { flex-shrink: 0; height: 28px; padding: 0 10px; border: 0; border-radius: 8px; background: #2C3038; color: #F2F3F5; font-size: 11px; }
+html[data-theme=dark] #dbg { display: none; }
+
+#flash { position: fixed; inset: 0; z-index: 50; background: #FFFFFF; opacity: 0; pointer-events: none; }
+#flash.on { animation: flash .45s ease-out; }
+@keyframes flash { 0% { opacity: 0; } 20% { opacity: .6; } 100% { opacity: 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .ring .arc, .pill[data-loc=pending] .dot { animation: none; } }
+
+/* ---------- camera (the screens camera.js drives, as before) ---------- */
+#s-cam { height: 100vh; height: 100dvh; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; color: var(--fg);
+         padding: calc(14px + env(safe-area-inset-top)) 16px calc(14px + env(safe-area-inset-bottom)); }
+#s-cam > header { min-height: 44px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+#cancel { justify-self: start; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 999px; background: var(--surfd); display: flex; align-items: center; justify-content: center; }
+#s-cam h1 { grid-column: 2; margin: 0; font-size: 16px; font-weight: 600; }
 #rec { grid-column: 2; display: none; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--red); color: #FFFFFF; font-size: 14px; font-weight: 600; }
 #rec i { width: 9px; height: 9px; border-radius: 999px; background: #FFFFFF; }
 #rec b { font-weight: 600; font-variant-numeric: tabular-nums; }
-nav { grid-column: 3; justify-self: end; display: flex; padding: 3px; gap: 2px; border-radius: 999px; background: var(--surf); direction: ltr; }
-nav a { min-width: 46px; height: 36px; padding: 0 8px; display: flex; align-items: center; justify-content: center; border-radius: 999px; color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; }
-nav a[aria-current] { background: var(--fg); color: var(--bg); }
+#camManual { grid-column: 3; justify-self: end; height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--surfd); color: var(--fg);
+             display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+#camManual .i { width: 16px; height: 16px; }
+.cam-nav { margin-top: 8px; align-self: center; display: flex; padding: 3px; gap: 2px; border-radius: 999px; background: var(--surfd); direction: ltr; }
+.cam-nav a { min-width: 46px; height: 36px; padding: 0 8px; display: flex; align-items: center; justify-content: center; border-radius: 999px; color: var(--dmuted); font-size: 13px; font-weight: 600; text-decoration: none; }
+.cam-nav a[aria-current] { background: var(--fg); color: var(--dbg); }
 
-.frame { position: relative; flex: 1 1 0; min-height: 0; margin-top: 12px; border-radius: 28px; background: var(--surf); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.frame { position: relative; flex: 1 1 0; min-height: 0; margin-top: 12px; border-radius: 28px; background: var(--surfd); overflow: hidden; display: flex; align-items: center; justify-content: center; }
 /* The picture and the points flip together here. The video element itself keeps the raw frame, and that goes to MediaPipe. */
 .stage { position: absolute; inset: 0; transform: scaleX(-1); }
 .stage video, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
@@ -48,18 +339,18 @@ nav a[aria-current] { background: var(--fg); color: var(--bg); }
 
 .words { padding: 14px 8px 0; min-height: 84px; display: flex; flex-direction: column; gap: 3px; }
 .words h2 { margin: 0; font-size: 20px; font-weight: 700; }
-.words p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.words p { margin: 0; color: var(--dmuted); font-size: 14px; line-height: 1.6; }
 .stats { margin: 8px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.stats div { padding: 7px 10px; border-radius: 14px; background: var(--surf); }
-.stats dt { color: var(--muted); font-size: 12px; }
+.stats div { padding: 7px 10px; border-radius: 14px; background: var(--surfd); }
+.stats dt { color: var(--dmuted); font-size: 12px; }
 .stats dd { margin: 0; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.stats small { color: var(--muted); font-size: 11px; font-weight: 500; }
-#info { margin: 6px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
-.wide { height: 52px; flex: none; margin-top: 10px; border: 0; border-radius: 16px; background: var(--red); color: #FFFFFF; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
-#saveClip { background: var(--surf); color: var(--fg); }
-.shutter { padding-top: 10px; display: none; flex-direction: column; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
-#shoot { position: relative; width: 82px; height: 82px; padding: 0; border: 4px solid #FFFFFF; border-radius: 999px; background: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-#shoot:disabled { opacity: .4; cursor: default; }
+.stats small { color: var(--dmuted); font-size: 11px; font-weight: 500; }
+#info { margin: 6px 0 0; color: var(--dmuted); font-size: 12px; text-align: center; }
+.wide { height: 52px; flex: none; margin-top: 10px; border: 0; border-radius: 16px; background: var(--red); color: #FFFFFF; font-size: 16px; font-weight: 700; }
+#saveClip { background: var(--surfd); color: var(--fg); }
+.shutter { padding-top: 10px; display: none; flex-direction: column; align-items: center; gap: 6px; color: var(--dmuted); font-size: 14px; }
+#shoot { position: relative; width: 82px; height: 82px; padding: 0; border: 4px solid #FFFFFF; border-radius: 999px; background: none; display: flex; align-items: center; justify-content: center; }
+#shoot:disabled { opacity: .4; }
 #shoot .dot { width: 62px; height: 62px; border-radius: 999px; background: var(--red); }
 #shoot svg { position: absolute; top: -4px; left: -4px; display: none; transform: rotate(-90deg); }
 
@@ -69,10 +360,10 @@ html:not(.debug) .debug-only { display: none !important; }
 
 [data-state=ready] #guide, [data-state=count] #guide { display: block; }
 [data-state=count] #guide { opacity: .35; }
-[data-state=count] #cancel, [data-state=rec] #cancel { display: flex; }
 [data-state=count] #count, [data-state=rec] #tag { display: flex; }
+[data-state=count] #camManual, [data-state=rec] #camManual { display: none; }
 [data-state=ready] #pills { display: grid; }
-[data-state=rec] h1 { display: none; }
+#s-cam[data-state=rec] h1 { display: none; }
 [data-state=rec] #rec { display: flex; }
 [data-state=rec] #ring { display: block; }
 [data-state=ready] .shutter, [data-state=count] .shutter, [data-state=rec] .shutter, [data-state=done] .shutter { display: flex; }
@@ -84,17 +375,71 @@ html:not(.debug) .debug-only { display: none !important; }
 </style>
 </head>
 <body>
-<main id="app" data-state="off">
+<svg width="0" height="0" style="position: absolute" aria-hidden="true"><symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></symbol><symbol id="i-ambulance" viewBox="0 0 24 24"><path d="M10 10H6"></path><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.28a1 1 0 0 0-.684-.948l-1.923-.641a1 1 0 0 1-.578-.502l-1.539-3.076A1 1 0 0 0 16.382 8H14"></path><path d="M8 8v4"></path><path d="M9 18h6"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"></path></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.27 21a2 2 0 0 0 3.46 0"></path><path d="M3.26 15.33A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.67C19.41 13.96 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.41 5.96-2.74 7.33"></path></symbol><symbol id="i-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle><path d="m4.93 4.93 4.24 4.24"></path><path d="m14.83 9.17 4.24-4.24"></path><path d="m14.83 14.83 4.24 4.24"></path><path d="m9.17 14.83-4.24 4.24"></path></symbol><symbol id="i-camoff" viewBox="0 0 24 24"><path d="M14.564 14.558a3 3 0 1 1-4.122-4.121"></path><path d="m2 2 20 20"></path><path d="M20 20H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 .819-.175"></path><path d="M9.695 4.024A2 2 0 0 1 10.004 4h3.993a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v7.344"></path></symbol><symbol id="i-car" viewBox="0 0 24 24"><path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.65 5H8.4a2 2 0 0 0-1.9 1.26L5 10 3 8"></path><path d="M7 14h.01"></path><path d="M17 14h.01"></path><rect width="18" height="8" x="3" y="10" rx="2"></rect><path d="M5 18v2"></path><path d="M19 18v2"></path></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></symbol><symbol id="i-chevl" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></symbol><symbol id="i-cross" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M22 12h-4"></path><path d="M6 12H2"></path><path d="M12 6V2"></path><path d="M12 22v-4"></path></symbol><symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></symbol><symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M10.73 5.08A10.4 10.4 0 0 1 12 5c7 0 10 7 10 7a13.2 13.2 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 7 10 7a9.7 9.7 0 0 0 5.39-1.61"></path><path d="M14.08 14.12a3 3 0 1 1-4.2-4.2"></path><path d="m2 2 20 20"></path></symbol><symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></symbol><symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></symbol><symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"></path><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"></path><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></symbol><symbol id="i-mapoff" viewBox="0 0 24 24"><path d="M12.75 7.09a3 3 0 0 1 2.16 2.16"></path><path d="M17.072 17.072c-1.634 2.17-3.527 3.912-4.471 4.727a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 1.432-4.568"></path><path d="m2 2 20 20"></path><path d="M8.475 2.818A8 8 0 0 1 20 10c0 1.183-.31 2.377-.81 3.533"></path><path d="M9.13 9.13a3 3 0 0 0 3.74 3.74"></path></symbol><symbol id="i-msg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></symbol><symbol id="i-phone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"></rect><path d="M12 18h.01"></path></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.99-5.54 10.19-7.4 11.8a1 1 0 0 1-1.2 0C9.54 20.19 4 14.99 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></symbol><symbol id="i-plus" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"></rect><path d="M12 8v8"></path><path d="M8 12h8"></path></symbol><symbol id="i-pulse" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"></path></symbol><symbol id="i-redo" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M14.54 21.69a.5.5 0 0 0 .94-.03l6.5-19a.5.5 0 0 0-.64-.64l-19 6.5a.5.5 0 0 0-.03.94l7.93 3.18a2 2 0 0 1 1.11 1.11z"></path><path d="m21.85 2.15-10.94 10.94"></path></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></symbol><symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></symbol><symbol id="i-waves" viewBox="0 0 24 24"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"></path><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"></path><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"></path></symbol><symbol id="i-wifioff" viewBox="0 0 24 24"><path d="M12 20h.01"></path><path d="M8.5 16.429a5 5 0 0 1 7 0"></path><path d="M5 12.859a10 10 0 0 1 5.17-2.69"></path><path d="M19 12.859a10 10 0 0 0-2.007-1.523"></path><path d="M2 8.82a15 15 0 0 1 4.177-2.643"></path><path d="M22 8.82a15 15 0 0 0-11.288-3.764"></path><path d="m2 2 20 20"></path></symbol><symbol id="i-wind" viewBox="0 0 24 24"><path d="M12.8 19.6A2 2 0 1 0 14 16H2"></path><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"></path><path d="M9.8 4.4A2 2 0 1 1 11 8H2"></path></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></symbol></svg>
+<div id="flash" aria-hidden="true"></div>
+<p id="dbg" class="debug-only"><span id="dbgText">–</span><button id="dbgSave" type="button">احفظ النقاط</button></p>
+
+<!-- 1 · Main -->
+<section id="s-main" class="scr" hidden>
+  <header class="main-top">
+    <div class="brand">
+      <img src="logo.svg" alt="شعار يد بيد" width="46" height="37">
+      <div><b>يد بيد</b><span>بلاغات الطوارئ بلغة الإشارة</span></div>
+    </div>
+    <button id="toProfile" class="round" type="button" aria-label="ملفي"><svg class="i"><use href="#i-user"/></svg></button>
+  </header>
+  <div class="pills">
+    <button id="locPill" class="pill" type="button" data-loc="idle"><i class="dot"></i><span id="locPillText">نطلب موقعك وقت البلاغ</span></button>
+    <span class="pill amber">نسخة تجريبية: البلاغ ما يوصل لأي جهة</span>
+  </div>
+  <section class="hero">
+    <h1 tabindex="-1">عندك طارئ؟</h1>
+    <p>أشّر البلاغ أمام الكاميرا، ونقرأ نوعه، وتتأكد منه قبل الإرسال.</p>
+  </section>
+  <div class="sign-wrap">
+    <button id="sign" class="sign" type="button" aria-label="أشّر البلاغ بلغة الإشارة"><svg width="81" height="112" viewBox="0 0 103 143" fill="none" aria-hidden="true"><path d="M32.03 77.76C31.99 78.62 31.84 79.88 31.61 80.70C31.38 81.52 30.96 82.19 30.67 82.67C30.38 83.15 30.17 83.31 29.87 83.58C29.57 83.85 29.24 84.09 28.90 84.30C28.55 84.50 28.18 84.67 27.80 84.80C27.42 84.93 26.98 85.02 26.62 85.07C26.26 85.12 26.01 85.12 25.65 85.10C25.29 85.07 24.84 85.02 24.46 84.91C24.07 84.81 23.68 84.66 23.32 84.49C22.96 84.31 22.73 84.21 22.29 83.85C21.84 83.49 21.99 83.76 20.65 82.34C19.32 80.92 15.64 76.70 14.28 75.32C12.91 73.94 13.08 74.37 12.47 74.06C11.86 73.75 11.21 73.57 10.62 73.46C10.02 73.35 9.44 73.35 8.91 73.39C8.39 73.43 7.94 73.53 7.48 73.68C7.02 73.83 6.57 74.03 6.15 74.27C5.73 74.52 5.33 74.82 4.98 75.15C4.62 75.48 4.30 75.85 4.02 76.25C3.75 76.65 3.52 77.09 3.34 77.54C3.16 77.99 3.02 78.43 2.95 78.95C2.87 79.47 2.84 80.09 2.90 80.65C2.95 81.22 3.05 81.71 3.27 82.32C3.50 82.93 2.84 82.11 4.25 84.31C5.67 86.51 8.76 91.17 11.78 95.52C14.79 99.86 18.30 105.21 22.35 110.38C26.40 115.56 33.62 123.61 36.08 126.59C38.53 129.57 36.67 127.37 37.06 128.27C37.45 129.17 38.07 131.12 38.42 132.00C38.77 132.89 38.88 133.08 39.16 133.57C39.45 134.07 39.77 134.55 40.15 134.98C40.52 135.41 40.80 135.73 41.40 136.16C42.00 136.58 42.81 137.11 43.75 137.53C44.69 137.95 45.80 138.34 47.05 138.66C48.29 138.98 49.73 139.25 51.22 139.45C52.70 139.65 53.91 139.79 55.94 139.88C57.98 139.96 60.99 140.01 63.44 139.97C65.90 139.94 68.69 139.82 70.68 139.66C72.67 139.51 74.32 139.23 75.38 139.05C76.44 138.86 76.59 138.75 77.04 138.58C77.50 138.41 77.79 138.27 78.11 138.05C78.43 137.83 78.71 137.58 78.95 137.28C79.19 136.98 79.13 137.34 79.53 136.27C79.93 135.20 80.28 133.75 81.37 130.87C82.45 127.99 84.87 122.09 86.03 119.01C87.20 115.93 87.73 114.39 88.34 112.40C88.95 110.41 89.31 108.99 89.67 107.07C90.03 105.15 90.32 103.16 90.49 100.88C90.67 98.60 90.73 95.76 90.71 93.38C90.69 91.01 90.49 88.14 90.38 86.65C90.28 85.15 90.25 85.36 90.08 84.42C89.91 83.48 89.49 81.83 89.36 81.03C89.23 80.23 89.08 80.67 89.32 79.61C89.55 78.56 89.84 78.26 90.77 74.69C91.69 71.12 93.43 64.23 94.86 58.19C96.29 52.15 98.55 42.06 99.35 38.44C100.16 34.83 99.62 37.05 99.68 36.48C99.73 35.91 99.74 35.50 99.69 35.02C99.64 34.54 99.51 34.02 99.37 33.61C99.22 33.20 99.04 32.88 98.82 32.55C98.59 32.22 98.33 31.91 98.03 31.64C97.74 31.37 97.41 31.13 97.06 30.94C96.71 30.75 96.37 30.60 95.95 30.49C95.53 30.39 94.96 30.31 94.53 30.31C94.09 30.31 93.72 30.37 93.34 30.47C92.95 30.57 92.57 30.71 92.22 30.90C91.87 31.08 91.56 31.28 91.23 31.58C90.91 31.87 90.56 32.27 90.28 32.67C90.01 33.07 89.83 33.40 89.59 33.96C89.35 34.53 90.14 31.90 88.84 36.07C87.55 40.24 83.08 55.00 81.82 59.00C80.56 62.99 81.47 59.76 81.29 60.03C81.10 60.30 80.95 60.49 80.71 60.63C80.46 60.78 80.08 60.91 79.82 60.93C79.56 60.94 79.36 60.91 79.12 60.72C78.89 60.54 78.57 60.26 78.41 59.80C78.25 59.34 78.01 61.34 78.17 57.96C78.33 54.58 78.99 46.09 79.36 39.52C79.73 32.95 80.24 22.53 80.40 18.54C80.56 14.55 80.44 16.41 80.31 15.57C80.19 14.73 79.93 14.06 79.66 13.49C79.39 12.91 79.03 12.49 78.68 12.11C78.32 11.73 78.00 11.46 77.55 11.19C77.11 10.92 76.50 10.66 76.00 10.50C75.51 10.35 75.05 10.30 74.57 10.29C74.09 10.27 73.63 10.30 73.12 10.42C72.62 10.54 72.03 10.75 71.54 11.02C71.05 11.29 70.59 11.64 70.19 12.04C69.80 12.44 69.46 12.91 69.18 13.40C68.91 13.89 68.73 14.36 68.55 14.99C68.38 15.62 68.75 12.40 68.13 17.18C67.51 21.97 65.45 39.10 64.84 43.71C64.24 48.31 64.64 44.52 64.51 44.82C64.38 45.13 64.27 45.34 64.06 45.53C63.84 45.73 63.50 45.93 63.24 45.99C62.98 46.06 62.72 45.99 62.52 45.93C62.32 45.87 62.20 45.80 62.04 45.64C61.88 45.48 61.71 45.39 61.56 44.98C61.40 44.56 61.58 48.57 61.12 43.16C60.66 37.75 59.25 18.20 58.81 12.51C58.37 6.82 58.59 9.89 58.48 9.03C58.36 8.17 58.28 7.85 58.12 7.34C57.97 6.84 57.76 6.38 57.55 5.99C57.34 5.60 57.16 5.33 56.86 4.99C56.57 4.66 56.15 4.27 55.80 4.00C55.45 3.73 55.16 3.55 54.76 3.37C54.36 3.19 53.81 3.01 53.38 2.91C52.95 2.81 52.58 2.78 52.17 2.78C51.77 2.77 51.36 2.81 50.96 2.88C50.57 2.95 50.24 3.02 49.80 3.22C49.36 3.41 48.79 3.68 48.32 4.05C47.85 4.43 47.33 4.97 46.98 5.45C46.63 5.94 46.41 6.40 46.21 6.97C46.01 7.54 45.88 6.32 45.80 8.88C45.72 11.45 45.65 15.17 45.72 22.37C45.79 29.58 46.17 46.95 46.24 52.10C46.30 57.26 46.20 52.92 46.12 53.29C46.03 53.65 45.91 54.02 45.73 54.29C45.54 54.56 45.24 54.78 45.00 54.90C44.76 55.01 44.49 54.99 44.28 54.97C44.07 54.95 43.94 54.90 43.76 54.77C43.57 54.64 43.39 54.59 43.18 54.21C42.96 53.83 43.41 56.73 42.48 52.49C41.55 48.25 38.72 34.05 37.61 28.75C36.49 23.45 36.24 22.43 35.81 20.70C35.38 18.97 35.29 18.95 35.03 18.35C34.78 17.75 34.54 17.46 34.28 17.10C34.02 16.74 33.79 16.50 33.45 16.21C33.12 15.92 32.64 15.60 32.26 15.38C31.87 15.17 31.56 15.04 31.13 14.93C30.71 14.81 30.14 14.71 29.70 14.68C29.26 14.65 28.92 14.67 28.49 14.75C28.05 14.82 27.50 14.97 27.08 15.13C26.67 15.29 26.40 15.42 26.01 15.70C25.62 15.98 25.12 16.36 24.74 16.82C24.36 17.29 23.98 17.89 23.73 18.48C23.49 19.07 23.35 19.68 23.27 20.37C23.20 21.05 22.79 18.42 23.31 22.59C23.83 26.76 25.29 37.75 26.39 45.38C27.50 53.00 29.26 63.99 29.95 68.35C30.65 72.71 30.24 70.34 30.55 71.54C30.87 72.74 31.60 74.51 31.84 75.54C32.09 76.58 32.07 76.90 32.03 77.76Z" fill="#FFFFFF"></path><g stroke="#E81C25" stroke-width="1.8" stroke-linecap="round" opacity="0.55"><path d="M60.0 130.0L43.0 120.0"></path><path d="M43.0 120.0L29.0 105.0"></path><path d="M29.0 105.0L18.0 91.0"></path><path d="M18.0 91.0L9.5 80.0"></path><path d="M60.0 130.0L38.0 70.0"></path><path d="M38.0 70.0L33.7 45.4"></path><path d="M33.7 45.4L31.2 31.1"></path><path d="M31.2 31.1L29.4 20.8"></path><path d="M60.0 130.0L54.5 65.0"></path><path d="M54.5 65.0L53.3 37.0"></path><path d="M53.3 37.0L52.6 21.0"></path><path d="M52.6 21.0L52.1 9.0"></path><path d="M60.0 130.0L70.0 67.0"></path><path d="M70.0 67.0L72.2 41.6"></path><path d="M72.2 41.6L73.5 26.7"></path><path d="M73.5 26.7L74.4 16.2"></path><path d="M60.0 130.0L84.0 75.0"></path><path d="M84.0 75.0L89.2 55.7"></path><path d="M89.2 55.7L92.3 44.1"></path><path d="M92.3 44.1L94.6 35.4"></path><path d="M38.0 70.0L54.5 65.0"></path><path d="M54.5 65.0L70.0 67.0"></path><path d="M70.0 67.0L84.0 75.0"></path></g><g fill="#E81C25"><circle cx="60.0" cy="130.0" r="3"></circle><circle cx="43.0" cy="120.0" r="3"></circle><circle cx="29.0" cy="105.0" r="3"></circle><circle cx="18.0" cy="91.0" r="3"></circle><circle cx="9.5" cy="80.0" r="3.5"></circle><circle cx="38.0" cy="70.0" r="3"></circle><circle cx="33.7" cy="45.4" r="3"></circle><circle cx="31.2" cy="31.1" r="3"></circle><circle cx="29.4" cy="20.8" r="3.5"></circle><circle cx="54.5" cy="65.0" r="3"></circle><circle cx="53.3" cy="37.0" r="3"></circle><circle cx="52.6" cy="21.0" r="3"></circle><circle cx="52.1" cy="9.0" r="3.5"></circle><circle cx="70.0" cy="67.0" r="3"></circle><circle cx="72.2" cy="41.6" r="3"></circle><circle cx="73.5" cy="26.7" r="3"></circle><circle cx="74.4" cy="16.2" r="3.5"></circle><circle cx="84.0" cy="75.0" r="3"></circle><circle cx="89.2" cy="55.7" r="3"></circle><circle cx="92.3" cy="44.1" r="3"></circle><circle cx="94.6" cy="35.4" r="3.5"></circle></g></svg><span>أشّر البلاغ</span></button>
+  </div>
+  <div class="prep" role="status">
+    <span id="prepText">نجهّز قراءة الإشارة</span>
+    <span id="prepTrack" class="track" aria-hidden="true"><i id="prepBar"></i></span>
+  </div>
+  <section class="quick">
+    <span class="label">أو بلّغ بدون إشارة</span>
+    <div class="grid4" id="quick"></div>
+  </section>
+  <div class="main-foot"><p class="privacy"><svg class="i"><use href="#i-lock"/></svg>الفيديو ما يطلع من جوالك. نرسل نقاط الحركة بس.</p></div>
+</section>
+
+<!-- Permission (first time) -->
+<section id="s-perm" class="scr" hidden>
+  <div class="perm-art">
+    <div class="brand"><img src="logo.svg" alt="شعار يد بيد" width="36" height="29"><b>يد بيد</b></div>
+    <svg width="350" height="250" viewBox="0 0 350 250" fill="none" role="img" aria-label="نقاط اليدين والجسم بدون الوجه"><circle cx="175" cy="110" r="38" stroke="#111418" stroke-opacity=".35" stroke-width="2" stroke-dasharray="5 7"></circle><g stroke="#111418" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M118 206H232M175 166V206"></path><path d="M118 206L62 238L84 176"></path><path d="M232 206L288 238L266 176"></path><path d="M118 206L124 250M232 206L226 250" stroke-opacity=".4"></path></g><g fill="#111418"><circle cx="118" cy="206" r="5"></circle><circle cx="232" cy="206" r="5"></circle><circle cx="62" cy="238" r="5"></circle><circle cx="288" cy="238" r="5"></circle><circle cx="175" cy="166" r="5"></circle></g><g transform="translate(84 176) rotate(-9) scale(-.62 .62) translate(-60 -130)"><path d="M32.03 77.76C31.99 78.62 31.84 79.88 31.61 80.70C31.38 81.52 30.96 82.19 30.67 82.67C30.38 83.15 30.17 83.31 29.87 83.58C29.57 83.85 29.24 84.09 28.90 84.30C28.55 84.50 28.18 84.67 27.80 84.80C27.42 84.93 26.98 85.02 26.62 85.07C26.26 85.12 26.01 85.12 25.65 85.10C25.29 85.07 24.84 85.02 24.46 84.91C24.07 84.81 23.68 84.66 23.32 84.49C22.96 84.31 22.73 84.21 22.29 83.85C21.84 83.49 21.99 83.76 20.65 82.34C19.32 80.92 15.64 76.70 14.28 75.32C12.91 73.94 13.08 74.37 12.47 74.06C11.86 73.75 11.21 73.57 10.62 73.46C10.02 73.35 9.44 73.35 8.91 73.39C8.39 73.43 7.94 73.53 7.48 73.68C7.02 73.83 6.57 74.03 6.15 74.27C5.73 74.52 5.33 74.82 4.98 75.15C4.62 75.48 4.30 75.85 4.02 76.25C3.75 76.65 3.52 77.09 3.34 77.54C3.16 77.99 3.02 78.43 2.95 78.95C2.87 79.47 2.84 80.09 2.90 80.65C2.95 81.22 3.05 81.71 3.27 82.32C3.50 82.93 2.84 82.11 4.25 84.31C5.67 86.51 8.76 91.17 11.78 95.52C14.79 99.86 18.30 105.21 22.35 110.38C26.40 115.56 33.62 123.61 36.08 126.59C38.53 129.57 36.67 127.37 37.06 128.27C37.45 129.17 38.07 131.12 38.42 132.00C38.77 132.89 38.88 133.08 39.16 133.57C39.45 134.07 39.77 134.55 40.15 134.98C40.52 135.41 40.80 135.73 41.40 136.16C42.00 136.58 42.81 137.11 43.75 137.53C44.69 137.95 45.80 138.34 47.05 138.66C48.29 138.98 49.73 139.25 51.22 139.45C52.70 139.65 53.91 139.79 55.94 139.88C57.98 139.96 60.99 140.01 63.44 139.97C65.90 139.94 68.69 139.82 70.68 139.66C72.67 139.51 74.32 139.23 75.38 139.05C76.44 138.86 76.59 138.75 77.04 138.58C77.50 138.41 77.79 138.27 78.11 138.05C78.43 137.83 78.71 137.58 78.95 137.28C79.19 136.98 79.13 137.34 79.53 136.27C79.93 135.20 80.28 133.75 81.37 130.87C82.45 127.99 84.87 122.09 86.03 119.01C87.20 115.93 87.73 114.39 88.34 112.40C88.95 110.41 89.31 108.99 89.67 107.07C90.03 105.15 90.32 103.16 90.49 100.88C90.67 98.60 90.73 95.76 90.71 93.38C90.69 91.01 90.49 88.14 90.38 86.65C90.28 85.15 90.25 85.36 90.08 84.42C89.91 83.48 89.49 81.83 89.36 81.03C89.23 80.23 89.08 80.67 89.32 79.61C89.55 78.56 89.84 78.26 90.77 74.69C91.69 71.12 93.43 64.23 94.86 58.19C96.29 52.15 98.55 42.06 99.35 38.44C100.16 34.83 99.62 37.05 99.68 36.48C99.73 35.91 99.74 35.50 99.69 35.02C99.64 34.54 99.51 34.02 99.37 33.61C99.22 33.20 99.04 32.88 98.82 32.55C98.59 32.22 98.33 31.91 98.03 31.64C97.74 31.37 97.41 31.13 97.06 30.94C96.71 30.75 96.37 30.60 95.95 30.49C95.53 30.39 94.96 30.31 94.53 30.31C94.09 30.31 93.72 30.37 93.34 30.47C92.95 30.57 92.57 30.71 92.22 30.90C91.87 31.08 91.56 31.28 91.23 31.58C90.91 31.87 90.56 32.27 90.28 32.67C90.01 33.07 89.83 33.40 89.59 33.96C89.35 34.53 90.14 31.90 88.84 36.07C87.55 40.24 83.08 55.00 81.82 59.00C80.56 62.99 81.47 59.76 81.29 60.03C81.10 60.30 80.95 60.49 80.71 60.63C80.46 60.78 80.08 60.91 79.82 60.93C79.56 60.94 79.36 60.91 79.12 60.72C78.89 60.54 78.57 60.26 78.41 59.80C78.25 59.34 78.01 61.34 78.17 57.96C78.33 54.58 78.99 46.09 79.36 39.52C79.73 32.95 80.24 22.53 80.40 18.54C80.56 14.55 80.44 16.41 80.31 15.57C80.19 14.73 79.93 14.06 79.66 13.49C79.39 12.91 79.03 12.49 78.68 12.11C78.32 11.73 78.00 11.46 77.55 11.19C77.11 10.92 76.50 10.66 76.00 10.50C75.51 10.35 75.05 10.30 74.57 10.29C74.09 10.27 73.63 10.30 73.12 10.42C72.62 10.54 72.03 10.75 71.54 11.02C71.05 11.29 70.59 11.64 70.19 12.04C69.80 12.44 69.46 12.91 69.18 13.40C68.91 13.89 68.73 14.36 68.55 14.99C68.38 15.62 68.75 12.40 68.13 17.18C67.51 21.97 65.45 39.10 64.84 43.71C64.24 48.31 64.64 44.52 64.51 44.82C64.38 45.13 64.27 45.34 64.06 45.53C63.84 45.73 63.50 45.93 63.24 45.99C62.98 46.06 62.72 45.99 62.52 45.93C62.32 45.87 62.20 45.80 62.04 45.64C61.88 45.48 61.71 45.39 61.56 44.98C61.40 44.56 61.58 48.57 61.12 43.16C60.66 37.75 59.25 18.20 58.81 12.51C58.37 6.82 58.59 9.89 58.48 9.03C58.36 8.17 58.28 7.85 58.12 7.34C57.97 6.84 57.76 6.38 57.55 5.99C57.34 5.60 57.16 5.33 56.86 4.99C56.57 4.66 56.15 4.27 55.80 4.00C55.45 3.73 55.16 3.55 54.76 3.37C54.36 3.19 53.81 3.01 53.38 2.91C52.95 2.81 52.58 2.78 52.17 2.78C51.77 2.77 51.36 2.81 50.96 2.88C50.57 2.95 50.24 3.02 49.80 3.22C49.36 3.41 48.79 3.68 48.32 4.05C47.85 4.43 47.33 4.97 46.98 5.45C46.63 5.94 46.41 6.40 46.21 6.97C46.01 7.54 45.88 6.32 45.80 8.88C45.72 11.45 45.65 15.17 45.72 22.37C45.79 29.58 46.17 46.95 46.24 52.10C46.30 57.26 46.20 52.92 46.12 53.29C46.03 53.65 45.91 54.02 45.73 54.29C45.54 54.56 45.24 54.78 45.00 54.90C44.76 55.01 44.49 54.99 44.28 54.97C44.07 54.95 43.94 54.90 43.76 54.77C43.57 54.64 43.39 54.59 43.18 54.21C42.96 53.83 43.41 56.73 42.48 52.49C41.55 48.25 38.72 34.05 37.61 28.75C36.49 23.45 36.24 22.43 35.81 20.70C35.38 18.97 35.29 18.95 35.03 18.35C34.78 17.75 34.54 17.46 34.28 17.10C34.02 16.74 33.79 16.50 33.45 16.21C33.12 15.92 32.64 15.60 32.26 15.38C31.87 15.17 31.56 15.04 31.13 14.93C30.71 14.81 30.14 14.71 29.70 14.68C29.26 14.65 28.92 14.67 28.49 14.75C28.05 14.82 27.50 14.97 27.08 15.13C26.67 15.29 26.40 15.42 26.01 15.70C25.62 15.98 25.12 16.36 24.74 16.82C24.36 17.29 23.98 17.89 23.73 18.48C23.49 19.07 23.35 19.68 23.27 20.37C23.20 21.05 22.79 18.42 23.31 22.59C23.83 26.76 25.29 37.75 26.39 45.38C27.50 53.00 29.26 63.99 29.95 68.35C30.65 72.71 30.24 70.34 30.55 71.54C30.87 72.74 31.60 74.51 31.84 75.54C32.09 76.58 32.07 76.90 32.03 77.76Z" fill="#FFFFFF" stroke="#111418" stroke-width="2.2" stroke-linejoin="round"></path><g stroke="#111418" stroke-width="1.8" stroke-linecap="round" opacity="0.45"><path d="M60.0 130.0L43.0 120.0"></path><path d="M43.0 120.0L29.0 105.0"></path><path d="M29.0 105.0L18.0 91.0"></path><path d="M18.0 91.0L9.5 80.0"></path><path d="M60.0 130.0L38.0 70.0"></path><path d="M38.0 70.0L33.7 45.4"></path><path d="M33.7 45.4L31.2 31.1"></path><path d="M31.2 31.1L29.4 20.8"></path><path d="M60.0 130.0L54.5 65.0"></path><path d="M54.5 65.0L53.3 37.0"></path><path d="M53.3 37.0L52.6 21.0"></path><path d="M52.6 21.0L52.1 9.0"></path><path d="M60.0 130.0L70.0 67.0"></path><path d="M70.0 67.0L72.2 41.6"></path><path d="M72.2 41.6L73.5 26.7"></path><path d="M73.5 26.7L74.4 16.2"></path><path d="M60.0 130.0L84.0 75.0"></path><path d="M84.0 75.0L89.2 55.7"></path><path d="M89.2 55.7L92.3 44.1"></path><path d="M92.3 44.1L94.6 35.4"></path><path d="M38.0 70.0L54.5 65.0"></path><path d="M54.5 65.0L70.0 67.0"></path><path d="M70.0 67.0L84.0 75.0"></path></g><g fill="#E81C25"><circle cx="60.0" cy="130.0" r="3"></circle><circle cx="43.0" cy="120.0" r="3"></circle><circle cx="29.0" cy="105.0" r="3"></circle><circle cx="18.0" cy="91.0" r="3"></circle><circle cx="9.5" cy="80.0" r="3.5"></circle><circle cx="38.0" cy="70.0" r="3"></circle><circle cx="33.7" cy="45.4" r="3"></circle><circle cx="31.2" cy="31.1" r="3"></circle><circle cx="29.4" cy="20.8" r="3.5"></circle><circle cx="54.5" cy="65.0" r="3"></circle><circle cx="53.3" cy="37.0" r="3"></circle><circle cx="52.6" cy="21.0" r="3"></circle><circle cx="52.1" cy="9.0" r="3.5"></circle><circle cx="70.0" cy="67.0" r="3"></circle><circle cx="72.2" cy="41.6" r="3"></circle><circle cx="73.5" cy="26.7" r="3"></circle><circle cx="74.4" cy="16.2" r="3.5"></circle><circle cx="84.0" cy="75.0" r="3"></circle><circle cx="89.2" cy="55.7" r="3"></circle><circle cx="92.3" cy="44.1" r="3"></circle><circle cx="94.6" cy="35.4" r="3.5"></circle></g></g><g transform="translate(266 176) rotate(9) scale(.62) translate(-60 -130)"><path d="M32.03 77.76C31.99 78.62 31.84 79.88 31.61 80.70C31.38 81.52 30.96 82.19 30.67 82.67C30.38 83.15 30.17 83.31 29.87 83.58C29.57 83.85 29.24 84.09 28.90 84.30C28.55 84.50 28.18 84.67 27.80 84.80C27.42 84.93 26.98 85.02 26.62 85.07C26.26 85.12 26.01 85.12 25.65 85.10C25.29 85.07 24.84 85.02 24.46 84.91C24.07 84.81 23.68 84.66 23.32 84.49C22.96 84.31 22.73 84.21 22.29 83.85C21.84 83.49 21.99 83.76 20.65 82.34C19.32 80.92 15.64 76.70 14.28 75.32C12.91 73.94 13.08 74.37 12.47 74.06C11.86 73.75 11.21 73.57 10.62 73.46C10.02 73.35 9.44 73.35 8.91 73.39C8.39 73.43 7.94 73.53 7.48 73.68C7.02 73.83 6.57 74.03 6.15 74.27C5.73 74.52 5.33 74.82 4.98 75.15C4.62 75.48 4.30 75.85 4.02 76.25C3.75 76.65 3.52 77.09 3.34 77.54C3.16 77.99 3.02 78.43 2.95 78.95C2.87 79.47 2.84 80.09 2.90 80.65C2.95 81.22 3.05 81.71 3.27 82.32C3.50 82.93 2.84 82.11 4.25 84.31C5.67 86.51 8.76 91.17 11.78 95.52C14.79 99.86 18.30 105.21 22.35 110.38C26.40 115.56 33.62 123.61 36.08 126.59C38.53 129.57 36.67 127.37 37.06 128.27C37.45 129.17 38.07 131.12 38.42 132.00C38.77 132.89 38.88 133.08 39.16 133.57C39.45 134.07 39.77 134.55 40.15 134.98C40.52 135.41 40.80 135.73 41.40 136.16C42.00 136.58 42.81 137.11 43.75 137.53C44.69 137.95 45.80 138.34 47.05 138.66C48.29 138.98 49.73 139.25 51.22 139.45C52.70 139.65 53.91 139.79 55.94 139.88C57.98 139.96 60.99 140.01 63.44 139.97C65.90 139.94 68.69 139.82 70.68 139.66C72.67 139.51 74.32 139.23 75.38 139.05C76.44 138.86 76.59 138.75 77.04 138.58C77.50 138.41 77.79 138.27 78.11 138.05C78.43 137.83 78.71 137.58 78.95 137.28C79.19 136.98 79.13 137.34 79.53 136.27C79.93 135.20 80.28 133.75 81.37 130.87C82.45 127.99 84.87 122.09 86.03 119.01C87.20 115.93 87.73 114.39 88.34 112.40C88.95 110.41 89.31 108.99 89.67 107.07C90.03 105.15 90.32 103.16 90.49 100.88C90.67 98.60 90.73 95.76 90.71 93.38C90.69 91.01 90.49 88.14 90.38 86.65C90.28 85.15 90.25 85.36 90.08 84.42C89.91 83.48 89.49 81.83 89.36 81.03C89.23 80.23 89.08 80.67 89.32 79.61C89.55 78.56 89.84 78.26 90.77 74.69C91.69 71.12 93.43 64.23 94.86 58.19C96.29 52.15 98.55 42.06 99.35 38.44C100.16 34.83 99.62 37.05 99.68 36.48C99.73 35.91 99.74 35.50 99.69 35.02C99.64 34.54 99.51 34.02 99.37 33.61C99.22 33.20 99.04 32.88 98.82 32.55C98.59 32.22 98.33 31.91 98.03 31.64C97.74 31.37 97.41 31.13 97.06 30.94C96.71 30.75 96.37 30.60 95.95 30.49C95.53 30.39 94.96 30.31 94.53 30.31C94.09 30.31 93.72 30.37 93.34 30.47C92.95 30.57 92.57 30.71 92.22 30.90C91.87 31.08 91.56 31.28 91.23 31.58C90.91 31.87 90.56 32.27 90.28 32.67C90.01 33.07 89.83 33.40 89.59 33.96C89.35 34.53 90.14 31.90 88.84 36.07C87.55 40.24 83.08 55.00 81.82 59.00C80.56 62.99 81.47 59.76 81.29 60.03C81.10 60.30 80.95 60.49 80.71 60.63C80.46 60.78 80.08 60.91 79.82 60.93C79.56 60.94 79.36 60.91 79.12 60.72C78.89 60.54 78.57 60.26 78.41 59.80C78.25 59.34 78.01 61.34 78.17 57.96C78.33 54.58 78.99 46.09 79.36 39.52C79.73 32.95 80.24 22.53 80.40 18.54C80.56 14.55 80.44 16.41 80.31 15.57C80.19 14.73 79.93 14.06 79.66 13.49C79.39 12.91 79.03 12.49 78.68 12.11C78.32 11.73 78.00 11.46 77.55 11.19C77.11 10.92 76.50 10.66 76.00 10.50C75.51 10.35 75.05 10.30 74.57 10.29C74.09 10.27 73.63 10.30 73.12 10.42C72.62 10.54 72.03 10.75 71.54 11.02C71.05 11.29 70.59 11.64 70.19 12.04C69.80 12.44 69.46 12.91 69.18 13.40C68.91 13.89 68.73 14.36 68.55 14.99C68.38 15.62 68.75 12.40 68.13 17.18C67.51 21.97 65.45 39.10 64.84 43.71C64.24 48.31 64.64 44.52 64.51 44.82C64.38 45.13 64.27 45.34 64.06 45.53C63.84 45.73 63.50 45.93 63.24 45.99C62.98 46.06 62.72 45.99 62.52 45.93C62.32 45.87 62.20 45.80 62.04 45.64C61.88 45.48 61.71 45.39 61.56 44.98C61.40 44.56 61.58 48.57 61.12 43.16C60.66 37.75 59.25 18.20 58.81 12.51C58.37 6.82 58.59 9.89 58.48 9.03C58.36 8.17 58.28 7.85 58.12 7.34C57.97 6.84 57.76 6.38 57.55 5.99C57.34 5.60 57.16 5.33 56.86 4.99C56.57 4.66 56.15 4.27 55.80 4.00C55.45 3.73 55.16 3.55 54.76 3.37C54.36 3.19 53.81 3.01 53.38 2.91C52.95 2.81 52.58 2.78 52.17 2.78C51.77 2.77 51.36 2.81 50.96 2.88C50.57 2.95 50.24 3.02 49.80 3.22C49.36 3.41 48.79 3.68 48.32 4.05C47.85 4.43 47.33 4.97 46.98 5.45C46.63 5.94 46.41 6.40 46.21 6.97C46.01 7.54 45.88 6.32 45.80 8.88C45.72 11.45 45.65 15.17 45.72 22.37C45.79 29.58 46.17 46.95 46.24 52.10C46.30 57.26 46.20 52.92 46.12 53.29C46.03 53.65 45.91 54.02 45.73 54.29C45.54 54.56 45.24 54.78 45.00 54.90C44.76 55.01 44.49 54.99 44.28 54.97C44.07 54.95 43.94 54.90 43.76 54.77C43.57 54.64 43.39 54.59 43.18 54.21C42.96 53.83 43.41 56.73 42.48 52.49C41.55 48.25 38.72 34.05 37.61 28.75C36.49 23.45 36.24 22.43 35.81 20.70C35.38 18.97 35.29 18.95 35.03 18.35C34.78 17.75 34.54 17.46 34.28 17.10C34.02 16.74 33.79 16.50 33.45 16.21C33.12 15.92 32.64 15.60 32.26 15.38C31.87 15.17 31.56 15.04 31.13 14.93C30.71 14.81 30.14 14.71 29.70 14.68C29.26 14.65 28.92 14.67 28.49 14.75C28.05 14.82 27.50 14.97 27.08 15.13C26.67 15.29 26.40 15.42 26.01 15.70C25.62 15.98 25.12 16.36 24.74 16.82C24.36 17.29 23.98 17.89 23.73 18.48C23.49 19.07 23.35 19.68 23.27 20.37C23.20 21.05 22.79 18.42 23.31 22.59C23.83 26.76 25.29 37.75 26.39 45.38C27.50 53.00 29.26 63.99 29.95 68.35C30.65 72.71 30.24 70.34 30.55 71.54C30.87 72.74 31.60 74.51 31.84 75.54C32.09 76.58 32.07 76.90 32.03 77.76Z" fill="#FFFFFF" stroke="#111418" stroke-width="2.2" stroke-linejoin="round"></path><g stroke="#111418" stroke-width="1.8" stroke-linecap="round" opacity="0.45"><path d="M60.0 130.0L43.0 120.0"></path><path d="M43.0 120.0L29.0 105.0"></path><path d="M29.0 105.0L18.0 91.0"></path><path d="M18.0 91.0L9.5 80.0"></path><path d="M60.0 130.0L38.0 70.0"></path><path d="M38.0 70.0L33.7 45.4"></path><path d="M33.7 45.4L31.2 31.1"></path><path d="M31.2 31.1L29.4 20.8"></path><path d="M60.0 130.0L54.5 65.0"></path><path d="M54.5 65.0L53.3 37.0"></path><path d="M53.3 37.0L52.6 21.0"></path><path d="M52.6 21.0L52.1 9.0"></path><path d="M60.0 130.0L70.0 67.0"></path><path d="M70.0 67.0L72.2 41.6"></path><path d="M72.2 41.6L73.5 26.7"></path><path d="M73.5 26.7L74.4 16.2"></path><path d="M60.0 130.0L84.0 75.0"></path><path d="M84.0 75.0L89.2 55.7"></path><path d="M89.2 55.7L92.3 44.1"></path><path d="M92.3 44.1L94.6 35.4"></path><path d="M38.0 70.0L54.5 65.0"></path><path d="M54.5 65.0L70.0 67.0"></path><path d="M70.0 67.0L84.0 75.0"></path></g><g fill="#E81C25"><circle cx="60.0" cy="130.0" r="3"></circle><circle cx="43.0" cy="120.0" r="3"></circle><circle cx="29.0" cy="105.0" r="3"></circle><circle cx="18.0" cy="91.0" r="3"></circle><circle cx="9.5" cy="80.0" r="3.5"></circle><circle cx="38.0" cy="70.0" r="3"></circle><circle cx="33.7" cy="45.4" r="3"></circle><circle cx="31.2" cy="31.1" r="3"></circle><circle cx="29.4" cy="20.8" r="3.5"></circle><circle cx="54.5" cy="65.0" r="3"></circle><circle cx="53.3" cy="37.0" r="3"></circle><circle cx="52.6" cy="21.0" r="3"></circle><circle cx="52.1" cy="9.0" r="3.5"></circle><circle cx="70.0" cy="67.0" r="3"></circle><circle cx="72.2" cy="41.6" r="3"></circle><circle cx="73.5" cy="26.7" r="3"></circle><circle cx="74.4" cy="16.2" r="3.5"></circle><circle cx="84.0" cy="75.0" r="3"></circle><circle cx="89.2" cy="55.7" r="3"></circle><circle cx="92.3" cy="44.1" r="3"></circle><circle cx="94.6" cy="35.4" r="3.5"></circle></g></g></svg>
+  </div>
+  <section class="pad" style="padding: 24px 24px 0; display: flex; flex-direction: column; gap: 6px">
+    <h1 class="big-title" tabindex="-1">نحتاج الكاميرا عشان نقرأ إشارتك</h1>
+    <p class="lead">تشتغل وقت البلاغ بس، وما نسجّل صوت.</p>
+  </section>
+  <section class="feats">
+    <div class="feat"><span><svg class="i"><use href="#i-eyeoff"/></svg></span><div><b>نقرأ الحركة، مو الصورة</b><p>النموذج ياخذ نقاط اليدين والجسم، مو صورة وجهك.</p></div></div>
+    <div class="feat"><span><svg class="i"><use href="#i-phone"/></svg></span><div><b>الفيديو ما يطلع من جوالك</b><p>نطلّع النقاط داخل الجوال، ونرسلها هي بس.</p></div></div>
+    <div class="feat"><span><svg class="i"><use href="#i-camoff"/></svg></span><div><b>تطفي لما تطلع</b><p>الكاميرا تشتغل في شاشة الإشارة بس، وتقدر تسحب الإذن من إعدادات المتصفح.</p></div></div>
+  </section>
+  <div class="actions">
+    <button id="start" class="primary" type="button"><svg class="i"><use href="#i-check"/></svg>اسمح بالكاميرا</button>
+    <button class="ghost" type="button" data-to="types"><svg class="i"><use href="#i-grid"/></svg>أبلّغ بدون كاميرا</button>
+  </div>
+</section>
+
+<!-- 2 · 3 · Camera: camera.js sets data-state (off, load, ready, count, rec, read, done) -->
+<section id="s-cam" data-state="off" hidden>
   <header>
-    <button id="cancel" type="button" aria-label="إلغاء">
+    <button id="cancel" type="button" aria-label="إغلاق والرجوع">
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="#F2F3F5" stroke-width="2.2" stroke-linecap="round"/></svg>
     </button>
-    <h1 id="title"></h1>
+    <h1 id="title" tabindex="-1"></h1>
     <span id="rec"><i></i>يسجّل<b id="clock" dir="ltr">0:00</b></span>
-    <nav class="debug-only" aria-label="مكان تشغيل النموذج">
-      <a id="gpu" href="?delegate=GPU&auto=1&debug=1">GPU</a>
-      <a id="cpu" href="?delegate=CPU&auto=1&debug=1">CPU</a>
-    </nav>
+    <button id="camManual" type="button"><svg class="i"><use href="#i-grid"/></svg>بدون إشارة</button>
   </header>
   <section class="frame" aria-label="الكاميرا">
     <div class="stage">
@@ -115,7 +460,7 @@ html:not(.debug) .debug-only { display: none !important; }
     </div>
     <div id="ring" aria-hidden="true"></div>
   </section>
-  <section class="words">
+  <section class="words" aria-live="polite">
     <h2 id="heading"></h2>
     <p id="sub"></p>
   </section>
@@ -124,9 +469,12 @@ html:not(.debug) .debug-only { display: none !important; }
     <div><dt>الإطار الواحد</dt><dd><span id="ms">–</span> <small>ms</small></dd></div>
     <div><dt>مقطع 6 ثوانٍ</dt><dd><span id="clipSec">–</span> <small>ث</small></dd></div>
   </dl>
+  <nav class="cam-nav debug-only" aria-label="مكان تشغيل النموذج">
+    <a id="gpu" href="?delegate=GPU&auto=1&debug=1">GPU</a>
+    <a id="cpu" href="?delegate=CPU&auto=1&debug=1">CPU</a>
+  </nav>
   <p id="info" class="debug-only"></p>
   <button id="saveClip" class="wide debug-only" type="button" hidden>احفظ النقاط</button>
-  <button id="start" class="wide" type="button">شغّل الكاميرا</button>
   <div class="shutter">
     <button id="shoot" type="button" aria-label="ابدأ التسجيل">
       <span class="dot"></span>
@@ -134,8 +482,218 @@ html:not(.debug) .debug-only { display: none !important; }
     </button>
     <span id="shootLabel"></span>
   </div>
-</main>
+</section>
+
+<!-- 4 · Reading, and the slow and failed versions of it -->
+<section id="s-read" class="scr" data-mode="wait" hidden>
+  <div class="center-col">
+    <div class="ring">
+      <svg width="148" height="148" viewBox="0 0 148 148" fill="none" aria-hidden="true">
+        <circle cx="74" cy="74" r="68" stroke="#F4F5F7" stroke-width="8"/>
+        <path id="readArc" class="arc" d="M74 6a68 68 0 0 1 64.7 89" stroke="#E81C25" stroke-width="8" stroke-linecap="round"/>
+      </svg>
+      <span class="hand"><svg width="74" height="74" viewBox="0 6 100 92" fill="none" aria-hidden="true"><g stroke="#111418" stroke-width="2.2" stroke-linecap="round" opacity="0.75"><path d="M50.0 92.0L36.0 84.0"></path><path d="M36.0 84.0L26.0 74.0"></path><path d="M26.0 74.0L19.0 64.0"></path><path d="M19.0 64.0L13.0 56.0"></path><path d="M50.0 92.0L40.0 58.0"></path><path d="M40.0 58.0L38.0 42.0"></path><path d="M38.0 42.0L37.0 31.0"></path><path d="M37.0 31.0L36.0 22.0"></path><path d="M50.0 92.0L50.0 56.0"></path><path d="M50.0 56.0L50.0 38.0"></path><path d="M50.0 38.0L50.0 26.0"></path><path d="M50.0 26.0L50.0 16.0"></path><path d="M50.0 92.0L59.0 58.0"></path><path d="M59.0 58.0L61.0 42.0"></path><path d="M61.0 42.0L62.0 31.0"></path><path d="M62.0 31.0L63.0 23.0"></path><path d="M50.0 92.0L67.0 63.0"></path><path d="M67.0 63.0L71.0 51.0"></path><path d="M71.0 51.0L73.0 43.0"></path><path d="M73.0 43.0L75.0 36.0"></path><path d="M40.0 58.0L50.0 56.0"></path><path d="M50.0 56.0L59.0 58.0"></path><path d="M59.0 58.0L67.0 63.0"></path></g><g fill="#E81C25"><circle cx="50.0" cy="92.0" r="3.2"></circle><circle cx="36.0" cy="84.0" r="3.2"></circle><circle cx="26.0" cy="74.0" r="3.2"></circle><circle cx="19.0" cy="64.0" r="3.2"></circle><circle cx="13.0" cy="56.0" r="3.8"></circle><circle cx="40.0" cy="58.0" r="3.2"></circle><circle cx="38.0" cy="42.0" r="3.2"></circle><circle cx="37.0" cy="31.0" r="3.2"></circle><circle cx="36.0" cy="22.0" r="3.8"></circle><circle cx="50.0" cy="56.0" r="3.2"></circle><circle cx="50.0" cy="38.0" r="3.2"></circle><circle cx="50.0" cy="26.0" r="3.2"></circle><circle cx="50.0" cy="16.0" r="3.8"></circle><circle cx="59.0" cy="58.0" r="3.2"></circle><circle cx="61.0" cy="42.0" r="3.2"></circle><circle cx="62.0" cy="31.0" r="3.2"></circle><circle cx="63.0" cy="23.0" r="3.8"></circle><circle cx="67.0" cy="63.0" r="3.2"></circle><circle cx="71.0" cy="51.0" r="3.2"></circle><circle cx="73.0" cy="43.0" r="3.2"></circle><circle cx="75.0" cy="36.0" r="3.8"></circle></g></svg></span>
+      <svg class="i clock"><use href="#i-clock"/></svg>
+    </div>
+    <h1 id="readTitle" class="big-title" tabindex="-1">نقرأ إشارتك…</h1>
+    <p id="readLead" class="lead">ثوانٍ، وبعدها تتأكد من البلاغ قبل ما ينرسل.</p>
+  </div>
+  <ol class="steps">
+    <li class="done"><div class="rail"><span class="mark"><svg class="i"><use href="#i-check"/></svg></span><span class="line"></span></div>
+      <div class="txt"><b>طلّعنا نقاط اليدين والجسم</b><span class="s">داخل جوالك · <bdi id="readFrames">0</bdi> إطار</span></div></li>
+    <li class="now"><div class="rail"><span class="mark"></span><span class="line"></span></div>
+      <div class="txt"><b>نقرأ نوع البلاغ</b><span class="s" id="readStep">13 نوع، أو إشارة عادية</span></div></li>
+    <li class="todo"><div class="rail"><span class="mark"></span></div>
+      <div class="txt"><b>تتأكد قبل الإرسال</b><span class="s">بعدها</span></div></li>
+  </ol>
+  <div class="actions">
+    <p class="privacy wait-only"><svg class="i"><use href="#i-lock"/></svg>الفيديو ما طلع من جوالك.</p>
+    <button id="readCancel" class="ghost wait-only" type="button">إلغاء</button>
+    <button class="primary slow-only" type="button" data-to="types"><svg class="i"><use href="#i-grid"/></svg>اختر النوع بنفسك</button>
+    <button class="ghost slow-only" type="button" data-sign><svg class="i"><use href="#i-redo"/></svg>أعد الإشارة</button>
+  </div>
+</section>
+
+<!-- 5 · 5ج · Confirm, signed or chosen, with or without a location -->
+<section id="s-confirm" class="scr" hidden>
+  <header class="head">
+    <span id="kicker" class="kicker" data-src="manual"><svg class="i"><use id="kickerIcon" href="#i-grid"/></svg><span id="kickerText">اخترته بنفسك</span></span>
+    <h1 class="big-title" tabindex="-1">تأكّد قبل الإرسال</h1>
+  </header>
+  <section id="typeCard" class="type-card" data-ag="cd">
+    <span class="ticon"><svg class="i"><use id="cIcon" href="#i-flame"/></svg></span>
+    <div><b id="cType">حريق</b><span id="cAgency" class="ag-chip">الدفاع المدني · 998</span></div>
+  </section>
+  <section id="cGloss" class="gloss" hidden>
+    <span class="label">قرينا من إشارتك</span>
+    <div id="cWords" class="chips"></div>
+  </section>
+  <section class="rows">
+    <div id="locRow" class="row">
+      <svg class="i" id="locIcon"><use href="#i-pin"/></svg>
+      <div><b id="locTitle">نحدد موقعك…</b><span id="locSub">اسمح بالموقع لو طلبه المتصفح</span></div>
+    </div>
+    <div id="locBox" class="amber-box" hidden>
+      <div class="ab"><svg class="i"><use href="#i-mapoff"/></svg>
+        <div><b>ما قدرنا نحدد موقعك</b><p id="locWhy">شغّل الموقع، أو اكتب أقرب معلم. وتقدر ترسل بدونه.</p></div></div>
+      <div class="abrow">
+        <button id="locRetry" class="mini" type="button"><svg class="i"><use href="#i-pin"/></svg>شغّل الموقع</button>
+        <label><span class="sr">وين أنت؟</span><input id="landmark" type="text" placeholder="مثال: قرب مسجد الحي" autocomplete="off"></label>
+      </div>
+    </div>
+    <div class="row">
+      <svg class="i med"><use href="#i-drop"/></svg>
+      <div><b id="medTitle">الملف الطبي</b><span id="medSub"></span></div>
+      <button id="medEdit" class="link" type="button" data-to="profile">عدّل</button>
+    </div>
+  </section>
+  <div class="actions">
+    <p class="demo"><svg class="i"><use href="#i-alert"/></svg><span>نسخة تجريبية: الإرسال عرض بس، والبلاغ ما يوصل لأي جهة.</span></p>
+    <button id="send" class="primary" type="button"><svg class="i"><use href="#i-send"/></svg><span id="sendLabel">أرسل البلاغ</span></button>
+    <div class="two">
+      <button id="cAlt1" class="ghost" type="button" data-to="types">مو هذا النوع</button>
+      <button id="cAlt2" class="ghost" type="button" data-sign><svg class="i"><use id="cAlt2Icon" href="#i-redo"/></svg><span id="cAlt2Text">أعد الإشارة</span></button>
+    </div>
+  </div>
+</section>
+
+<!-- 5أ · Unsure: nothing is preselected, a tap goes to the confirm screen -->
+<section id="s-unsure" class="scr" hidden>
+  <header class="head" style="gap: 6px">
+    <span class="amber-chip"><svg class="i"><use href="#i-alert"/></svg>ما تأكدنا من الإشارة</span>
+    <h1 id="uTitle" class="big-title" style="margin-top: 4px" tabindex="-1">هل تقصد هذا؟</h1>
+    <p id="uLead" class="note"></p>
+  </header>
+  <nav id="uChoices" class="choices" aria-label="الأنواع الأقرب"></nav>
+  <div style="padding: 12px 20px 0"><button class="ghost" type="button" data-to="types"><svg class="i"><use href="#i-grid"/></svg>كل الأنواع (13)</button></div>
+  <section class="with"><span>ينرسل مع البلاغ</span><b id="uWith"></b></section>
+  <div class="actions"><button class="ghost" type="button" data-sign style="min-height: 56px"><svg class="i"><use href="#i-redo"/></svg>أعد الإشارة</button></div>
+</section>
+
+<!-- 5ب · All 13 types -->
+<section id="s-types" class="scr" hidden>
+  <header class="bar"><button class="round" type="button" data-back aria-label="رجوع"><svg class="i"><use href="#i-back"/></svg></button><span class="spacer"></span></header>
+  <section style="padding: 6px 20px 0; display: flex; flex-direction: column; gap: 4px">
+    <div id="tNotice" class="amber-box" style="margin: 0 0 14px" hidden>
+      <div class="ab"><svg class="i"><use href="#i-alert"/></svg><div><b id="tNoticeTitle">ما قدرنا نقرأ نوع البلاغ من الإشارة</b><p id="tNoticeText">اختر النوع هنا، أو أعد الإشارة.</p></div></div>
+    </div>
+    <h1 class="big-title" tabindex="-1">وش نوع الحالة؟</h1>
+    <p class="note">اختر النوع، وتتأكد منه قبل الإرسال.</p>
+  </section>
+  <div id="groups" class="groups"></div>
+  <div class="actions">
+    <button id="tSign" class="ghost" type="button" data-sign hidden><svg class="i"><use href="#i-redo"/></svg>أعد الإشارة</button>
+    <p class="privacy"><svg class="i"><use href="#i-lock"/></svg>ما يحتاج كاميرا.</p>
+  </div>
+</section>
+
+<!-- 6 · Sent (a demo: nothing reached any agency) -->
+<section id="s-sent" class="scr" hidden>
+  <div class="center-col">
+    <span class="badge"><svg class="i"><use href="#i-check"/></svg></span>
+    <h1 class="big-title" tabindex="-1">انرسل البلاغ التجريبي</h1>
+    <p class="note">رقم تجريبي <bdi id="sId" dir="ltr" style="font-weight: 600; color: var(--ink)">YB-0000</bdi> · <bdi id="sTime"></bdi></p>
+  </div>
+  <div class="pad" style="margin-top: 18px">
+    <p class="demo"><svg class="i"><use href="#i-alert"/></svg><span><b>ما وصل لأي جهة.</b> التطبيق للحين مو مربوط بالجهات، فالإرسال هنا عرض بس. لو الطارئ حقيقي، اعرض الشاشة لأحد جنبك يتصل.</span></p>
+  </div>
+  <section class="kv">
+    <div><span>النوع</span><b id="sType"></b></div>
+    <div><span>الجهة بعد الربط</span><b id="sAgency"></b></div>
+    <div><span>الموقع</span><b id="sLoc"></b></div>
+    <div><span>معه</span><b id="sMed"></b></div>
+  </section>
+  <section class="concept" aria-label="تصوّر مستقبلي">
+    <div class="top"><span class="tag">تصوّر مستقبلي</span><small>يحتاج ربط مع الجهات</small></div>
+    <p><svg class="i"><use href="#i-msg"/></svg>الجهة تتواصل معك كتابةً، مو مكالمة</p>
+    <p><svg class="i"><use href="#i-bell"/></svg>ننبّهك بالاهتزاز والوميض مع كل تحديث</p>
+  </section>
+  <div class="actions">
+    <button class="dark-btn" type="button" data-home>الرئيسية</button>
+    <button class="ghost" type="button" data-to="show">اعرض الشاشة لأحد جنبك</button>
+  </div>
+</section>
+
+<!-- Not sent: no connection -->
+<section id="s-failed" class="scr" hidden>
+  <div class="center-col">
+    <span class="badge amb"><svg class="i"><use href="#i-wifioff"/></svg></span>
+    <h1 class="big-title" tabindex="-1">ما انرسل البلاغ بعد</h1>
+    <p class="lead">ما فيه اتصال. نحاول نرسله مرة ثانية لحالنا أول ما يرجع النت، فخل الصفحة مفتوحة.</p>
+  </div>
+  <div class="retry" role="status"><b><svg class="i"><use href="#i-clock"/></svg><span id="fNext">نحاول مرة ثانية بعد 8 ثواني</span></b><small id="fTry">المحاولة 1</small></div>
+  <section class="show">
+    <span class="label">اعرض الشاشة لأحد جنبك</span>
+    <div class="card" id="fCard"></div>
+  </section>
+  <div class="actions">
+    <button id="fRetry" class="primary" type="button"><svg class="i"><use href="#i-redo"/></svg>أعد المحاولة الحين</button>
+    <button class="ghost" type="button" data-to="confirm" data-replace>رجوع للبلاغ</button>
+  </div>
+</section>
+
+<!-- Show this screen to someone nearby -->
+<section id="s-show" class="scr" hidden>
+  <header class="bar"><button class="round" type="button" data-back aria-label="رجوع"><svg class="i"><use href="#i-back"/></svg></button><span class="spacer"></span></header>
+  <h1 class="sr" tabindex="-1">اعرض الشاشة لأحد جنبك</h1>
+  <div class="card" id="showCard"></div>
+</section>
+
+<!-- Camera blocked or not working -->
+<section id="s-denied" class="scr" hidden>
+  <header class="bar"><button class="round" type="button" data-home aria-label="رجوع للرئيسية"><svg class="i"><use href="#i-back"/></svg></button><span class="spacer"></span></header>
+  <div class="center-col" style="padding-top: 18px">
+    <span class="cam-off"><svg class="i"><use href="#i-camoff"/></svg></span>
+    <h1 id="dTitle" class="big-title" tabindex="-1">الكاميرا مقفلة</h1>
+    <p id="dLead" class="lead">بلّغ الحين بدونها، أو افتحها من المتصفح عشان تأشّر.</p>
+  </div>
+  <section id="dHow" class="how">
+    <span class="label">طريقة فتحها</span>
+    <ol id="dSteps"></ol>
+  </section>
+  <div class="actions">
+    <button class="primary" type="button" data-to="types" data-replace><svg class="i"><use href="#i-grid"/></svg>بلّغ بدون كاميرا</button>
+    <button id="dRetry" class="ghost" type="button"><svg class="i"><use href="#i-redo"/></svg><span id="dRetryText">فتحتها، كمّل</span></button>
+  </div>
+</section>
+
+<!-- Profile: kept on this phone only -->
+<section id="s-profile" class="scr" hidden>
+  <header class="bar"><button class="round" type="button" data-back aria-label="رجوع"><svg class="i"><use href="#i-back"/></svg></button><h1 tabindex="-1">ملفي</h1><span class="spacer"></span></header>
+  <section class="who">
+    <span id="pAvatar" class="avatar" aria-hidden="true">؟</span>
+    <div>
+      <label><span class="sr">الاسم</span><input id="pName" data-key="name" type="text" placeholder="اسمك" autocomplete="name"></label>
+      <label><span class="sr">رقم الجوال</span><input id="pPhone" data-key="phone" type="tel" placeholder="+966 5x xxx xxxx" autocomplete="tel" dir="ltr"></label>
+    </div>
+    <span id="pState" class="state">ناقص</span>
+  </section>
+  <section class="psec">
+    <span class="label">ينرسل مع كل بلاغ</span>
+    <label class="field"><span>فصيلة الدم</span>
+      <select data-key="blood"><option value="">اختر</option><option>O+</option><option>O-</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option value="ما أعرف">ما أعرف</option></select></label>
+    <label class="field"><span>الحساسية</span><input data-key="allergy" type="text" placeholder="مثال: البنسلين، أو ما فيه"></label>
+    <label class="field"><span>السمع والتواصل</span><input data-key="hearing" type="text" placeholder="مثال: صمم كلي · لغة الإشارة"></label>
+    <label class="field"><span>جهة اتصال</span><input data-key="contact" type="text" placeholder="الاسم والرقم"></label>
+  </section>
+  <section class="psec">
+    <span class="label">التنبيهات وسهولة الاستخدام</span>
+    <label class="toggle"><span><b>تنبيه بالاهتزاز والوميض</b><small id="pFlashSub">لما يبدأ التسجيل ويخلص، ولما ينرسل البلاغ</small></span><input data-key="alerts" type="checkbox"></label>
+    <label class="toggle"><span><b>نص أكبر</b></span><input data-key="big" type="checkbox"></label>
+    <div class="hands">
+      <span><b>اليد اللي تأشّر فيها</b><br><small>تنحفظ بس، وما تغيّر قراءة الإشارة للحين.</small></span>
+      <div class="seg" role="radiogroup" aria-label="اليد اللي تأشّر فيها">
+        <label><input type="radio" name="hand" value="right" data-key="hand">اليمنى</label>
+        <label><input type="radio" name="hand" value="left" data-key="hand">اليسرى</label>
+      </div>
+    </div>
+  </section>
+  <div class="actions"><p class="privacy"><svg class="i"><use href="#i-lock"/></svg>ملفك محفوظ في جوالك بس، وينرسل مع البلاغ لما تأكده.</p></div>
+</section>
+
 <script src="vendor/holistic/holistic.js"></script>
-<script src="camera.js?v=4"></script>
+<script src="report.js?v=5"></script>
+<script src="app.js?v=5"></script>
+<script src="camera.js?v=5"></script>
 </body>
 </html>

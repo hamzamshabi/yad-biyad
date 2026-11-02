@@ -2,6 +2,8 @@
 // (AI_PLAN.md 7.11 هـ), one row per frame with its time, in the layout of tools/browser_kp/extract.js: 86 points in pixels, right hand 0-20,
 // left hand 21-41, lips 42-60 stay zero, body 61-85 = the first 25 pose points. Same MediaPipe and same settings as there.
 // No face points are drawn and no video is kept. Only the points of a finished clip leave the device, to the reading service (server/app.py).
+// The other screens are in app.js: this file tells it what happens through 'cam' events on window, and it drives this file through
+// window.Camera (open, stop, cancel). The camera runs only while its screen or the reading screen is showing.
 // ?debug=1 shows the speed, the CPU switch, each hand apart and a button that saves the points, ?delegate=CPU runs the model on the
 // processor, ?auto=1 starts without the button, and with debug on ?reader= points the page at another service.
 const q = new URLSearchParams(location.search);
@@ -29,14 +31,15 @@ const HAND = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5
               [14, 15], [15, 16], [13, 17], [17, 18], [18, 19], [19, 20], [0, 17]];
 const LINE = '#F2F3F5', BODY_DOT = '#FF9DA1', HAND_DOT = '#FF6B72';
 const NOT_SEEN = 'راسك وكتفيك ما بانوا كفاية';
+const CAMERA_KINDS = {NotAllowedError: 'denied', SecurityError: 'denied', NotFoundError: 'none', OverconstrainedError: 'none', NotReadableError: 'busy'};
 const CAMERA_ERRORS = {
   NotAllowedError: 'ما انسمح للكاميرا. افتح إذن الكاميرا من إعدادات المتصفح.',
   NotFoundError: 'ما لقينا كاميرا في هذا الجهاز.',
   NotReadableError: 'الكاميرا مشغولة ببرنامج ثاني.',
 };
 const SCREENS = {
-  off: ['الكاميرا', 'نحتاج الكاميرا عشان نقرأ إشارتك', 'تشتغل وقت البلاغ بس، وما نسجّل صوت.', ''],
-  load: ['الكاميرا', 'نجهّز النموذج', 'النقاط تتحسب داخل جهازك، وما ينحفظ فيديو.', ''],
+  off: ['الكاميرا', 'نفتح الكاميرا', 'تشتغل وقت البلاغ بس، وما نسجّل صوت.', ''],
+  load: ['جهّز الكاميرا', 'نجهّز قراءة الإشارة', 'النقاط تتحسب داخل جوالك، وما ينحفظ فيديو. وتقدر تختار النوع بنفسك من فوق.', ''],
   ready: ['جهّز الكاميرا', 'أشّر الجملة كاملة', 'امسك الجوال بيد وأشّر بالثانية، أو اسنده وأشّر بيدينك. مثل: «بيت حريق».', 'ابدأ، ونعد لك 3'],
   count: ['استعد', 'نبدأ بعد العد', 'لما يصير الإطار أحمر، يعني نسجّل. أشّر الجملة وبعدين اضغط انتهيت.', ''],
   rec: ['', 'أشّر الحين', '', 'انتهيت'],
@@ -48,10 +51,13 @@ const $ = (id) => document.getElementById(id);
 const video = $('video'), canvas = $('points'), ctx = canvas.getContext('2d');
 window.__live = {state: 'off', delegate: DELEGATE, frames: 0, fps: 0, ms: 0, load_ms: 0, files_ms: 0, model_ms: 0, cache_error: null, error: null, last: null, clip: null, result: null, read_ms: 0, read_error: null};
 let state = 'off', rows = null, frameTime = 0, recStart = 0, clock = null, counter = null, model = null, prep = '';
+let session = 0, halt = null, loop = Promise.resolve();  // each opening of the camera is a session, stop() ends it
+
+const tell = (type, detail = {}) => window.dispatchEvent(new CustomEvent('cam', {detail: {type, ...detail}}));
 
 function go(next) {
   state = window.__live.state = next;
-  $('app').dataset.state = next;
+  $('s-cam').dataset.state = next;
   const [title, heading, sub, label] = SCREENS[next];
   $('title').textContent = title;
   $('heading').textContent = heading;
@@ -61,6 +67,7 @@ function go(next) {
   $('shoot').setAttribute('aria-label', next === 'rec' ? 'إيقاف التسجيل' : next === 'count' ? 'ابدأ الحين' : 'ابدأ التسجيل');
   if (next !== 'ready') setStatus(next === 'off' || next === 'load' ? prep : '');
   if (next === 'ready') $('saveClip').hidden = true;
+  tell('state', {state: next});
 }
 
 function setStatus(text, kind = '') {
@@ -74,12 +81,12 @@ function setPrep(text, kind) {
   if ((state === 'off' || state === 'load') && $('status').className !== 'bad') setStatus(text, kind);
 }
 
-function fail(text, e) {
+// kind tells app.js which screen to show: 'denied', 'none', 'busy', 'https', 'webgl', 'model' or 'other'.
+function fail(text, kind, e) {
   window.__live.error = String(e || text);
-  go('off');
+  stop();
   setStatus(text, 'bad');
-  $('start').hidden = false;
-  $('start').disabled = false;
+  tell('error', {kind, text});
 }
 
 function drawPart(lm, links, dot, W, H, px) {
@@ -257,13 +264,17 @@ async function readClip() {
   try {
     const out = live.result = await ask(JSON.stringify({t_ms, kp, vis}));
     live.read_ms = performance.now() - t0;
-    if (out.report) showDone(`قرأناها: ${out.type_ar}`, 'هذي تجربة، وما انرسل شي لأي جهة.');
+    $('info').textContent = `${frames} إطار في ${seconds.toFixed(1)} ث · الرد ${Math.round(live.read_ms)} ms · p(normal) ${out.p_normal.toFixed(3)} · ${out.words || 'بدون كلمات'}`;
+    if (state !== 'read') return;                     // the person left this reading: cancelled, signed again or chose by hand
+    if (out.report) showDone(`قرأناها: ${out.type_ar}`, '');
     else if (!out.frame_ok) showDone(NOT_SEEN, 'ابعد الجوال شوي وسجّل مرة ثانية.');
     else showDone('ما قرأنا بلاغ', 'أشّر الجملة كاملة وسجّل مرة ثانية.');
-    $('info').textContent = `${frames} إطار في ${seconds.toFixed(1)} ث · الرد ${Math.round(live.read_ms)} ms · p(normal) ${out.p_normal.toFixed(3)} · ${out.words || 'بدون كلمات'}`;
+    tell('result', {result: out});
   } catch (e) {
     live.read_error = String(e);
+    if (state !== 'read') return;
     showDone('ما وصلنا للخادم', 'شيّك على النت وسجّل مرة ثانية.');
+    tell('readfail', {error: String(e)});
   }
 }
 
@@ -305,7 +316,10 @@ async function fillCache() {
       chunks.push(value);
       done += value.length;
       const pct = Math.min(Math.floor(100 * done / total), 99);
-      if (pct !== shown) setPrep(`نحمّل التطبيق ${shown = pct}%`);
+      if (pct !== shown) {
+        setPrep(`نحمّل التطبيق ${shown = pct}%`);
+        tell('prep', {stage: 'files', pct});
+      }
     }
     await cache.put(MODEL_DIR + name, new Response(new Blob(chunks), {headers: {'Content-Type': res.headers.get('Content-Type')}}));
   }));
@@ -323,6 +337,7 @@ async function prepare() {
   const t1 = performance.now();
   live.files_ms = t1 - t0;
   setPrep('نشغّل النموذج');
+  tell('prep', {stage: 'model'});
   const holistic = new window.Holistic({locateFile: (f) => MODEL_DIR + f});
   holistic.setOptions({modelComplexity: 1, smoothLandmarks: true, enableSegmentation: false, refineFaceLandmarks: false,
                        minDetectionConfidence: 0.5, minTrackingConfidence: 0.5, selfieMode: false,
@@ -332,37 +347,80 @@ async function prepare() {
   live.model_ms = performance.now() - t1;
   setPrep(state === 'off' ? 'جاهز' : '', 'ok');
   prep = '';
+  tell('prep', {stage: 'ready'});
   return holistic;
 }
 
 async function start() {
-  $('start').hidden = true;
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return fail('الكاميرا تشتغل على رابط https بس.');
-  if (!hasWebGL()) return fail('هذا المتصفح ما يشغّل قراءة الإشارة. جرّب متصفح ثاني.');  // MediaPipe needs it even on the CPU option
+  const me = ++session;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return fail('الكاميرا تشتغل على رابط https بس.', 'https');
+  if (!hasWebGL()) return fail('هذا المتصفح ما يشغّل قراءة الإشارة. جرّب متصفح ثاني.', 'webgl');  // MediaPipe needs it even on the CPU option
   go('load');
   setStatus(prep || 'نفتح الكاميرا');
+  await loop;                                         // the last session lets go of the model before this one sends a frame
+  let stream;
   try {
-    video.srcObject = await navigator.mediaDevices.getUserMedia({audio: false, video: {
+    stream = await navigator.mediaDevices.getUserMedia({audio: false, video: {
       facingMode: 'user', width: {ideal: 1280}, height: {ideal: 720}, frameRate: {ideal: 30}}});
+  } catch (e) {
+    if (me === session) fail(CAMERA_ERRORS[e.name] || 'ما قدرنا نفتح الكاميرا.', CAMERA_KINDS[e.name] || 'other', e);
+    return;
+  }
+  if (me !== session) return stream.getTracks().forEach((t) => t.stop());  // the screen closed while the phone was asking
+  video.srcObject = stream;
+  try {
     await video.play();
   } catch (e) {
-    return fail(CAMERA_ERRORS[e.name] || 'ما قدرنا نفتح الكاميرا.', e);
+    if (me === session) fail('ما قدرنا نفتح الكاميرا.', 'other', e);
+    return;
   }
+  window.__live.frames = 0;
+  spent.length = ends.length = recent.length = 0;
   setStatus(prep);
+  const stopped = new Promise((res) => { halt = res; });
+  loop = run(me, stopped);
+}
+
+async function run(me, stopped) {
   const t0 = performance.now();
   try {
-    const holistic = await (model || (model = prepare()));
+    const holistic = await Promise.race([model || (model = prepare()), stopped]);
+    if (me !== session) return;
     setStatus('نجهّز الكاميرا');
-    for (;;) {
-      await nextFrame();
+    while (me === session) {
+      await Promise.race([nextFrame(), stopped]);
+      if (me !== session) return;
+      if ($('s-cam').hidden) continue;                // the reading screen is up: the camera stays on for a quick retake, no frame is read
       frameTime = performance.now();
       await holistic.send({image: video});
       note(performance.now() - frameTime, t0);
     }
   } catch (e) {
+    if (me !== session) return;
     model = null;
-    fail('النموذج ما اشتغل على هذا الجهاز.', e);
+    fail('النموذج ما اشتغل على هذا الجهاز.', 'model', e);
   }
+}
+
+// Turns the camera off. A finished reading keeps its 'done' state, so its answer stays in window.__live.
+function stop() {
+  session++;
+  if (halt) halt();
+  clearTimers();
+  rows = null;
+  if (video.srcObject) video.srcObject.getTracks().forEach((t) => t.stop());
+  video.srcObject = null;
+  if (state !== 'done') go('off');
+}
+
+// What the camera screen does when it shows: start the camera, or go back to the frame check if it is still on.
+// keep leaves a 'done' screen as it is, so the person sees why the clip was not read.
+function open(keep = false) {
+  const on = video.srcObject && video.srcObject.getVideoTracks().some((t) => t.readyState === 'live');
+  if (on && (state === 'load' || state === 'ready' || (keep && state === 'done'))) return;
+  if (on && state !== 'off') return cancel();
+  stop();
+  start();
 }
 
 function shutter() {
@@ -380,11 +438,11 @@ function cancel() {
 
 if (DEBUG) document.documentElement.classList.add('debug');
 $(DELEGATE.toLowerCase()).setAttribute('aria-current', 'true');
+window.Camera = {open, stop, cancel, saveClip, get state() { return state; }};
 go('off');
-if (hasWebGL()) (model = prepare()).catch(() => { model = null; });  // loads as soon as the page opens, so the wait is not at the moment of need
-$('start').addEventListener('click', start);
+// Loads as soon as the page opens, so the wait is not at the moment of need. The main screen shows how far it got.
+if (hasWebGL()) (model = prepare()).catch(() => { model = null; tell('prep', {stage: 'failed'}); });
+else tell('prep', {stage: 'failed'});
 $('shoot').addEventListener('click', shutter);
-$('cancel').addEventListener('click', cancel);
 $('saveClip').addEventListener('click', saveClip);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && video.paused && video.srcObject) video.play().catch(() => {}); });
-if (q.get('auto') === '1') start();
