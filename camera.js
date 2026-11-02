@@ -40,8 +40,8 @@ const CAMERA_ERRORS = {
 const SCREENS = {
   off: ['الكاميرا', 'نفتح الكاميرا', 'تشتغل وقت البلاغ بس، وما نسجّل صوت.', ''],
   load: ['جهّز الكاميرا', 'نجهّز قراءة الإشارة', 'النقاط تتحسب داخل جوالك، وما ينحفظ فيديو. وتقدر تختار النوع بنفسك من فوق.', ''],
-  ready: ['جهّز الكاميرا', 'أشّر الجملة كاملة', 'امسك الجوال بيد وأشّر بالثانية، أو اسنده وأشّر بيدينك. مثل: «بيت حريق».', 'ابدأ، ونعد لك 3'],
-  count: ['استعد', 'نبدأ بعد العد', 'لما يصير الإطار أحمر، يعني نسجّل. أشّر الجملة وبعدين اضغط انتهيت.', ''],
+  ready: ['جهّز الكاميرا', 'أشّر الجملة كاملة', 'مثل: «بيت حريق». لما يصير الإطار أحمر نسجّل، ويوقف لحاله بعد 6 ثوانٍ.', 'ابدأ، ونعد لك 3'],
+  count: ['استعد', 'نبدأ بعد العد', '', 'ابدأ الحين'],
   rec: ['', 'أشّر الحين', '', 'انتهيت'],
   read: ['نقرأ الإشارة', 'لحظة، نقرأ إشارتك', 'نرسل النقاط بس، والفيديو ما يطلع من جوالك.', ''],
   done: ['انتهى التسجيل', '', '', 'سجّل مرة ثانية'],
@@ -70,9 +70,14 @@ function go(next) {
   tell('state', {state: next});
 }
 
+// Live regions are read aloud by screen readers on every write, so text is only written when it changes.
+function setText(el, text) {
+  if (el.textContent !== text) el.textContent = text;
+}
+
 function setStatus(text, kind = '') {
-  $('status').textContent = text;
-  $('status').className = kind;
+  setText($('status'), text);
+  if ($('status').className !== kind) $('status').className = kind;
 }
 
 // What the background loading is doing, shown only on the screens before the camera, and never over an error.
@@ -143,8 +148,8 @@ function frameCheck(vis, res) {
   const [, heading, sub] = SCREENS.ready;
   if (!head || !shoulders) setStatus('ابعد الجوال شوي', 'bad');
   else setStatus(hand ? 'جاهز، كل شي ظاهر' : 'ما نشوف يدك', hand ? 'ok' : 'bad');
-  $('heading').textContent = head && shoulders && !hand ? 'قرّب يدك للإطار' : heading;
-  $('sub').textContent = head && shoulders && !hand ? 'أشّر قدّام صدرك داخل الإطار. يد وحدة تكفي.' : sub;
+  setText($('heading'), head && shoulders && !hand ? 'قرّب يدك للإطار' : heading);
+  setText($('sub'), head && shoulders && !hand ? 'أشّر قدّام صدرك داخل الإطار. يد وحدة تكفي.' : sub);
 }
 
 function draw(res) {
@@ -200,10 +205,7 @@ function clearTimers() {
 function countDown() {
   let n = COUNT_FROM;
   go('count');
-  const show = () => {
-    $('num').textContent = n;
-    $('shootLabel').textContent = `يبدأ بعد ${n}`;
-  };
+  const show = () => { $('num').textContent = n; };
   show();
   counter = setInterval(() => {
     if (--n > 0) show();
@@ -212,10 +214,9 @@ function countDown() {
 }
 
 function tick() {
-  const ms = performance.now() - recStart, left = Math.ceil((MAX_MS - ms) / 1000), s = Math.floor(ms / 1000);
-  $('clock').textContent = `0:0${Math.min(s, 6)}`;
+  const ms = performance.now() - recStart, s = Math.floor(ms / 1000);
+  setText($('clock'), `0:0${Math.min(s, 6)}`);
   $('arc').setAttribute('stroke-dasharray', `${Math.min(100 * ms / MAX_MS, 100)} 100`);
-  $('sub').textContent = `باقي ${Math.max(left, 0)} ث · الحد 6 ثوانٍ`;
   if (ms >= MAX_MS) finish();
 }
 

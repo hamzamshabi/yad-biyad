@@ -200,9 +200,16 @@ $('cancel').addEventListener('click', () => {
 });
 $('camManual').addEventListener('click', () => nav('types'));
 
+// Live regions are read aloud on every write, so they only get written when the text changes.
+function setText(el, text) {
+  if (el.textContent !== text) el.textContent = text;
+}
+
 // ---------- the main screen: how far the model got, without holding anyone back ----------
-function setPrep(text, pct) {
+// The percentage is for the eyes; a screen reader hears only when it is ready or has failed (say).
+function setPrep(text, pct, say) {
   $('prepText').textContent = text;
+  if (say !== undefined) setText($('prepSay'), say);
   $('prepTrack').hidden = pct === null;
   if (pct !== null) $('prepBar').style.width = `${pct}%`;
 }
@@ -211,8 +218,9 @@ setPrep('نجهّز قراءة الإشارة · تقدر تختار النوع 
 const PREP = {
   files: (d) => setPrep(`نجهّز قراءة الإشارة ${d.pct}% · تقدر تختار النوع الحين`, d.pct),
   model: () => setPrep('نشغّل قراءة الإشارة…', 100),
-  ready: () => setPrep('التسجيل 6 ثوانٍ بالكثير، بالكاميرا الأمامية', null),
-  failed: () => setPrep('قراءة الإشارة ما جهزت. نحاول مرة ثانية لما تفتح الكاميرا، أو اختر النوع تحت.', null),
+  ready: () => setPrep('التسجيل 6 ثوانٍ بالكثير، بالكاميرا الأمامية', null, 'قراءة الإشارة جاهزة'),
+  failed: () => setPrep('قراءة الإشارة ما جهزت. نحاول مرة ثانية لما تفتح الكاميرا، أو اختر النوع تحت.', null,
+    'قراءة الإشارة ما جهزت. تقدر تختار النوع بنفسك.'),
 };
 
 // ---------- camera events ----------
@@ -252,17 +260,15 @@ function readMode(mode) {
   const T = {
     wait: ['نقرأ إشارتك…', 'ثوانٍ، وبعدها تتأكد من البلاغ قبل ما ينرسل.'],
     slow: ['أخذت وقت أطول من العادة', 'يمكن النت ضعيف. نكمل نحاول، وتقدر تختار النوع بنفسك بدل الانتظار.'],
-    fail: ['ما وصلنا لخدمة القراءة', 'شيّك على النت. وتقدر تختار النوع بنفسك الحين، أو تعيد الإشارة.'],
+    fail: ['ما قدرنا نقرأ الإشارة', 'يمكن النت ضعيف أو مقطوع. اختر النوع بنفسك الحين، أو أعد الإشارة.'],
   }[mode];
   $('readTitle').textContent = T[0];
   $('readLead').textContent = T[1];
-  if (mode === 'wait') $('readStep').textContent = '13 نوع، أو إشارة عادية';
+  if (mode === 'wait') $('readStep').textContent = 'من نقاط حركتك';
   if (mode === 'fail') $('readStep').textContent = 'ما وصلنا';
 }
 
 function startReading() {
-  const clip = window.__live.clip;
-  $('readFrames').textContent = clip ? clip.frames : 0;
   readMode('wait');
   const t0 = performance.now();
   reading = {t0};
@@ -325,9 +331,10 @@ ENTER.unsure = () => {
   const {types, reading: r} = unsure;
   $('uTitle').textContent = types.length > 1 ? 'هل تقصد واحد من هذول؟' : 'هل تقصد هذا؟';
   const read = r.words.length ? `قرينا «${r.words.join(' · ')}». ` : '';
-  $('uLead').textContent = `${read}اضغط عليه لو هو، وتتأكد قبل ما نرسل.`;
+  const one = types.length === 1;
+  $('uLead').textContent = `${read}${one ? 'لو هو، اضغط «إيه»' : 'اختر اللي تقصده'}، وتتأكد قبل ما نرسل.`;
   $('uChoices').innerHTML = types.map((t, i) => `<button class="choice" type="button" data-ag="${t.agency}" data-i="${i}">
-    <span class="ticon">${icon(t.icon)}</span><span><b>${esc(t.name)}</b><small>${esc(agencyLine(t))}</small></span>${icon('chevl')}</button>`).join('');
+    <span class="ticon">${icon(t.icon)}</span><span><b>${one ? 'إيه، ' : ''}${esc(t.name)}</b><small>${esc(agencyLine(t))}</small></span></button>`).join('');
   if (loc.state === 'idle') locate();
   renderWith();
 };
@@ -395,8 +402,8 @@ ENTER.confirm = () => {
   const {type: t, source, reading: r} = draft;
   const signed = source === 'sign';
   $('kicker').dataset.src = source;
-  $('kickerIcon').setAttribute('href', signed ? '#i-check' : '#i-grid');
-  $('kickerText').textContent = signed ? 'قرينا إشارتك' : 'اخترته بنفسك';
+  $('kickerIcon').setAttribute('href', signed ? '#i-check' : source === 'pick' ? '#i-hand' : '#i-grid');
+  $('kickerText').textContent = signed ? 'قرينا إشارتك' : source === 'pick' ? 'اخترته من إشارتك' : 'اخترته بنفسك';
   $('typeCard').dataset.ag = t.agency;
   $('cIcon').setAttribute('href', `#i-${t.icon}`);
   $('cType').textContent = t.name;
@@ -461,7 +468,7 @@ function armRetry() {
   let left = RETRY_S;
   const tick = () => {
     $('fNext').textContent = navigator.onLine ? `نحاول مرة ثانية بعد ${left} ثواني` : 'ننتظر يرجع النت';
-    $('fTry').textContent = `المحاولة ${pending ? pending.tries : 1}`;
+    setText($('fTry'), `المحاولة ${pending ? pending.tries : 1}`);
     if (navigator.onLine && left-- <= 0) {
       clearInterval(retry);
       if (pending) trySend(pending.report);
@@ -475,15 +482,15 @@ ENTER.failed = () => {
   if (!pending) return nav('main', true);
   renderCards();
   armRetry();
+  keepAwake(true);
 };
-LEAVE.failed = () => clearInterval(retry);
+LEAVE.failed = () => { clearInterval(retry); keepAwake(false); };
 $('fRetry').addEventListener('click', () => { if (pending) trySend(pending.report); });
 window.addEventListener('online', () => { if (current === 'failed' && pending) trySend(pending.report); });
 
 ENTER.sent = () => {
   if (!lastSent) return nav('main', true);
   const {report: r, res} = lastSent;
-  $('sId').textContent = res.id;
   $('sTime').textContent = new Date(res.at).toLocaleTimeString('ar-SA-u-nu-latn', {hour: 'numeric', minute: '2-digit'});
   $('sType').textContent = r.type;
   $('sAgency').textContent = `${r.agency_name} · ${r.agency_number}`;
@@ -508,7 +515,27 @@ function renderCards() {
 ENTER.show = () => {
   if (!cardHtml()) return nav('main', true);
   renderCards();
+  keepAwake(true);
 };
+LEAVE.show = () => keepAwake(false);
+
+// The card is held up to someone, so the screen must not dim or lock while it is up. Where there is no Wake Lock, nothing changes.
+let wake = null;
+async function keepAwake(on) {
+  try {
+    if (on && !wake && navigator.wakeLock) {
+      wake = await navigator.wakeLock.request('screen');
+      wake.addEventListener('release', () => { wake = null; });
+    } else if (!on && wake) {
+      const w = wake;
+      wake = null;
+      await w.release();
+    }
+  } catch (e) { wake = null; }
+}
+document.addEventListener('visibilitychange', () => {   // the browser drops the lock when the page is hidden
+  if (document.visibilityState === 'visible' && (current === 'show' || current === 'failed')) keepAwake(true);
+});
 
 // ---------- camera blocked ----------
 let deniedKind = 'denied';

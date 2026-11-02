@@ -51,12 +51,12 @@ p, li { text-wrap: pretty; }   /* no word left alone on the last line */
            display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.25rem; font-weight: 700;
            box-shadow: 0 12px 26px -10px rgba(232, 28, 37, .55); }
 .primary .i { width: 20px; height: 20px; stroke-width: 2.2; }
+.quiet { min-height: 48px; width: 100%; border: 0; background: none; color: var(--muted); font-size: 1rem; font-weight: 600; }
 .primary:disabled { opacity: .6; }
 .ghost { min-height: 52px; width: 100%; padding: 6px 12px; border: 1.5px solid var(--line); border-radius: 16px; background: none; color: var(--ink);
          display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; font-weight: 600; text-align: center; }
 .ghost .i { width: 17px; height: 17px; }
-.dark-btn { min-height: 56px; width: 100%; border: 0; border-radius: 16px; background: var(--ink); color: #FFFFFF; font-size: 1rem; font-weight: 600; }
-.primary:active, .ghost:active, .tile:active, .choice:active, .dark-btn:active, .sign:active { transform: scale(.98); }
+.primary:active, .ghost:active, .tile:active, .choice:active, .sign:active { transform: scale(.98); }
 .round { width: 44px; height: 44px; padding: 0; border: 0; border-radius: 999px; background: var(--surf); color: var(--ink);
          display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .round .i { stroke-width: 2.2; }
@@ -74,6 +74,9 @@ p, li { text-wrap: pretty; }   /* no word left alone on the last line */
 .demo { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--ambt); color: var(--ambd); display: flex; align-items: flex-start; gap: 8px;
         font-size: .8125rem; line-height: 1.55; font-weight: 500; }
 .demo .i { width: 16px; height: 16px; margin-top: 2px; color: var(--amb); }
+.demo.big { padding: 14px 16px; border-radius: 18px; font-size: 1rem; line-height: 1.6; }
+.demo.big .i { width: 20px; height: 20px; margin-top: 3px; }
+.fold { min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); display: flex; flex-direction: column; }
 
 /* Main */
 .brand { display: flex; align-items: center; gap: 10px; }
@@ -85,6 +88,8 @@ p, li { text-wrap: pretty; }   /* no word left alone on the last line */
 .pills { margin-top: 14px; padding: 0 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .pill { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 6px 13px; border: 0; border-radius: 999px; background: var(--surf);
         color: var(--ink); font-size: .875rem; font-weight: 500; }
+button.pill { position: relative; }
+button.pill::after { content: ''; position: absolute; inset: -5px 0; }   /* 44px to tap, 34px to see */
 .pill .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--dash); }
 .pill[data-loc=ok] .dot { background: var(--green); box-shadow: 0 0 0 3px var(--greent); }
 .pill[data-loc=fail] .dot { background: #D97706; }
@@ -132,6 +137,13 @@ p, li { text-wrap: pretty; }   /* no word left alone on the last line */
 .ring .clock { display: none; width: 56px; height: 56px; stroke-width: 1.8; color: var(--amb); }
 #s-read[data-mode=slow] .ring .clock, #s-read[data-mode=fail] .ring .clock { display: block; }
 #s-read[data-mode=slow] .ring .hand, #s-read[data-mode=fail] .ring .hand { display: none; }
+.ring .nonet { display: none; width: 54px; height: 54px; stroke-width: 1.8; color: var(--amb); }
+#s-read[data-mode=fail] .ring .arc, #s-read[data-mode=fail] .ring .clock { display: none; }
+#s-read[data-mode=fail] .ring .nonet { display: block; }
+.steps .xm { display: none; width: 14px; height: 14px; stroke-width: 3; }
+#s-read[data-mode=fail] .steps .now .mark { background: var(--ambt); }
+#s-read[data-mode=fail] .steps .now .mark::after { display: none; }
+#s-read[data-mode=fail] .steps .now .xm { display: block; color: var(--amb); }
 #s-read .center-col { padding-top: clamp(32px, 8vh, 70px); }
 #s-read h1 { margin-top: 22px; }
 .steps { margin: 30px 0 0; padding: 0 36px; list-style: none; display: flex; flex-direction: column; }
@@ -192,6 +204,13 @@ p, li { text-wrap: pretty; }   /* no word left alone on the last line */
 .amber-chip { align-self: flex-start; display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: var(--ambt); color: var(--amb);
               font-size: .75rem; font-weight: 600; }
 .amber-chip .i { width: 14px; height: 14px; }
+.amber-chip.soft { background: var(--surf); color: var(--muted); }
+.choices.here { margin: 0; gap: 10px; }
+.choices.here .choice { min-height: 84px; border: 0; background: var(--tint); }
+.choices.here .choice b { font-size: 1.375rem; }
+.choices.here .choice small { color: var(--ink); opacity: .75; }
+.choices.here .choice .ticon { background: #FFFFFF; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .choices { margin: 20px 20px 0; display: flex; flex-direction: column; gap: 12px; }
 .choice { width: 100%; display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 20px; border: 1.5px solid var(--line); background: none; color: var(--ink); text-align: right; }
 .choice .ticon { width: 56px; height: 56px; flex-shrink: 0; border-radius: 16px; background: var(--tint); color: var(--ag); display: flex; align-items: center; justify-content: center; }
@@ -218,6 +237,8 @@ p, li { text-wrap: pretty; }   /* no word left alone on the last line */
 /* Sent and not sent */
 .badge { width: 84px; height: 84px; border-radius: 999px; background: var(--green); color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 12px var(--greent); }
 .badge .i { width: 42px; height: 42px; stroke-width: 2.6; }
+.badge.plain { width: 76px; height: 76px; background: var(--surf); color: var(--ink); box-shadow: none; }
+.badge.plain .i { width: 34px; height: 34px; stroke-width: 2.2; }
 .badge.amb { width: 80px; height: 80px; background: var(--ambt); color: var(--amb); box-shadow: none; }
 .badge.amb .i { width: 38px; height: 38px; stroke-width: 2; }
 #s-sent .center-col, #s-failed .center-col { padding-top: clamp(28px, 5vh, 40px); }
@@ -233,6 +254,7 @@ p, li { text-wrap: pretty; }   /* no word left alone on the last line */
 .concept .top small { font-size: .75rem; color: var(--muted); }
 .concept p { margin: 0; display: flex; align-items: center; gap: 8px; font-size: .875rem; font-weight: 500; }
 .concept p .i { width: 18px; height: 18px; }
+.concept.after { margin: 4px 20px 28px; }
 .retry { margin: 18px 20px 0; padding: 12px 16px; border-radius: 16px; background: var(--surf); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .retry b { display: flex; align-items: center; gap: 8px; font-size: .875rem; font-weight: 600; }
 .retry b .i { width: 18px; height: 18px; }
@@ -286,7 +308,7 @@ p, li { text-wrap: pretty; }   /* no word left alone on the last line */
 .hands b { font-size: .875rem; font-weight: 600; }
 .hands small { font-size: .75rem; color: var(--muted); }
 .seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: var(--surf); }
-.seg label { height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: .875rem; font-weight: 500; color: var(--muted); }
+.seg label { height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: .875rem; font-weight: 500; color: var(--muted); }
 .seg label:has(input:checked) { background: #FFFFFF; color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(17, 20, 24, .12); }
 .seg input { margin: 0; accent-color: var(--red); }
 
@@ -402,7 +424,8 @@ html:not(.debug) .debug-only { display: none !important; }
   <div class="sign-wrap">
     <button id="sign" class="sign" type="button" aria-label="أشّر البلاغ بلغة الإشارة"><svg width="81" height="112" viewBox="0 0 103 143" fill="none" aria-hidden="true"><path d="M32.03 77.76C31.99 78.62 31.84 79.88 31.61 80.70C31.38 81.52 30.96 82.19 30.67 82.67C30.38 83.15 30.17 83.31 29.87 83.58C29.57 83.85 29.24 84.09 28.90 84.30C28.55 84.50 28.18 84.67 27.80 84.80C27.42 84.93 26.98 85.02 26.62 85.07C26.26 85.12 26.01 85.12 25.65 85.10C25.29 85.07 24.84 85.02 24.46 84.91C24.07 84.81 23.68 84.66 23.32 84.49C22.96 84.31 22.73 84.21 22.29 83.85C21.84 83.49 21.99 83.76 20.65 82.34C19.32 80.92 15.64 76.70 14.28 75.32C12.91 73.94 13.08 74.37 12.47 74.06C11.86 73.75 11.21 73.57 10.62 73.46C10.02 73.35 9.44 73.35 8.91 73.39C8.39 73.43 7.94 73.53 7.48 73.68C7.02 73.83 6.57 74.03 6.15 74.27C5.73 74.52 5.33 74.82 4.98 75.15C4.62 75.48 4.30 75.85 4.02 76.25C3.75 76.65 3.52 77.09 3.34 77.54C3.16 77.99 3.02 78.43 2.95 78.95C2.87 79.47 2.84 80.09 2.90 80.65C2.95 81.22 3.05 81.71 3.27 82.32C3.50 82.93 2.84 82.11 4.25 84.31C5.67 86.51 8.76 91.17 11.78 95.52C14.79 99.86 18.30 105.21 22.35 110.38C26.40 115.56 33.62 123.61 36.08 126.59C38.53 129.57 36.67 127.37 37.06 128.27C37.45 129.17 38.07 131.12 38.42 132.00C38.77 132.89 38.88 133.08 39.16 133.57C39.45 134.07 39.77 134.55 40.15 134.98C40.52 135.41 40.80 135.73 41.40 136.16C42.00 136.58 42.81 137.11 43.75 137.53C44.69 137.95 45.80 138.34 47.05 138.66C48.29 138.98 49.73 139.25 51.22 139.45C52.70 139.65 53.91 139.79 55.94 139.88C57.98 139.96 60.99 140.01 63.44 139.97C65.90 139.94 68.69 139.82 70.68 139.66C72.67 139.51 74.32 139.23 75.38 139.05C76.44 138.86 76.59 138.75 77.04 138.58C77.50 138.41 77.79 138.27 78.11 138.05C78.43 137.83 78.71 137.58 78.95 137.28C79.19 136.98 79.13 137.34 79.53 136.27C79.93 135.20 80.28 133.75 81.37 130.87C82.45 127.99 84.87 122.09 86.03 119.01C87.20 115.93 87.73 114.39 88.34 112.40C88.95 110.41 89.31 108.99 89.67 107.07C90.03 105.15 90.32 103.16 90.49 100.88C90.67 98.60 90.73 95.76 90.71 93.38C90.69 91.01 90.49 88.14 90.38 86.65C90.28 85.15 90.25 85.36 90.08 84.42C89.91 83.48 89.49 81.83 89.36 81.03C89.23 80.23 89.08 80.67 89.32 79.61C89.55 78.56 89.84 78.26 90.77 74.69C91.69 71.12 93.43 64.23 94.86 58.19C96.29 52.15 98.55 42.06 99.35 38.44C100.16 34.83 99.62 37.05 99.68 36.48C99.73 35.91 99.74 35.50 99.69 35.02C99.64 34.54 99.51 34.02 99.37 33.61C99.22 33.20 99.04 32.88 98.82 32.55C98.59 32.22 98.33 31.91 98.03 31.64C97.74 31.37 97.41 31.13 97.06 30.94C96.71 30.75 96.37 30.60 95.95 30.49C95.53 30.39 94.96 30.31 94.53 30.31C94.09 30.31 93.72 30.37 93.34 30.47C92.95 30.57 92.57 30.71 92.22 30.90C91.87 31.08 91.56 31.28 91.23 31.58C90.91 31.87 90.56 32.27 90.28 32.67C90.01 33.07 89.83 33.40 89.59 33.96C89.35 34.53 90.14 31.90 88.84 36.07C87.55 40.24 83.08 55.00 81.82 59.00C80.56 62.99 81.47 59.76 81.29 60.03C81.10 60.30 80.95 60.49 80.71 60.63C80.46 60.78 80.08 60.91 79.82 60.93C79.56 60.94 79.36 60.91 79.12 60.72C78.89 60.54 78.57 60.26 78.41 59.80C78.25 59.34 78.01 61.34 78.17 57.96C78.33 54.58 78.99 46.09 79.36 39.52C79.73 32.95 80.24 22.53 80.40 18.54C80.56 14.55 80.44 16.41 80.31 15.57C80.19 14.73 79.93 14.06 79.66 13.49C79.39 12.91 79.03 12.49 78.68 12.11C78.32 11.73 78.00 11.46 77.55 11.19C77.11 10.92 76.50 10.66 76.00 10.50C75.51 10.35 75.05 10.30 74.57 10.29C74.09 10.27 73.63 10.30 73.12 10.42C72.62 10.54 72.03 10.75 71.54 11.02C71.05 11.29 70.59 11.64 70.19 12.04C69.80 12.44 69.46 12.91 69.18 13.40C68.91 13.89 68.73 14.36 68.55 14.99C68.38 15.62 68.75 12.40 68.13 17.18C67.51 21.97 65.45 39.10 64.84 43.71C64.24 48.31 64.64 44.52 64.51 44.82C64.38 45.13 64.27 45.34 64.06 45.53C63.84 45.73 63.50 45.93 63.24 45.99C62.98 46.06 62.72 45.99 62.52 45.93C62.32 45.87 62.20 45.80 62.04 45.64C61.88 45.48 61.71 45.39 61.56 44.98C61.40 44.56 61.58 48.57 61.12 43.16C60.66 37.75 59.25 18.20 58.81 12.51C58.37 6.82 58.59 9.89 58.48 9.03C58.36 8.17 58.28 7.85 58.12 7.34C57.97 6.84 57.76 6.38 57.55 5.99C57.34 5.60 57.16 5.33 56.86 4.99C56.57 4.66 56.15 4.27 55.80 4.00C55.45 3.73 55.16 3.55 54.76 3.37C54.36 3.19 53.81 3.01 53.38 2.91C52.95 2.81 52.58 2.78 52.17 2.78C51.77 2.77 51.36 2.81 50.96 2.88C50.57 2.95 50.24 3.02 49.80 3.22C49.36 3.41 48.79 3.68 48.32 4.05C47.85 4.43 47.33 4.97 46.98 5.45C46.63 5.94 46.41 6.40 46.21 6.97C46.01 7.54 45.88 6.32 45.80 8.88C45.72 11.45 45.65 15.17 45.72 22.37C45.79 29.58 46.17 46.95 46.24 52.10C46.30 57.26 46.20 52.92 46.12 53.29C46.03 53.65 45.91 54.02 45.73 54.29C45.54 54.56 45.24 54.78 45.00 54.90C44.76 55.01 44.49 54.99 44.28 54.97C44.07 54.95 43.94 54.90 43.76 54.77C43.57 54.64 43.39 54.59 43.18 54.21C42.96 53.83 43.41 56.73 42.48 52.49C41.55 48.25 38.72 34.05 37.61 28.75C36.49 23.45 36.24 22.43 35.81 20.70C35.38 18.97 35.29 18.95 35.03 18.35C34.78 17.75 34.54 17.46 34.28 17.10C34.02 16.74 33.79 16.50 33.45 16.21C33.12 15.92 32.64 15.60 32.26 15.38C31.87 15.17 31.56 15.04 31.13 14.93C30.71 14.81 30.14 14.71 29.70 14.68C29.26 14.65 28.92 14.67 28.49 14.75C28.05 14.82 27.50 14.97 27.08 15.13C26.67 15.29 26.40 15.42 26.01 15.70C25.62 15.98 25.12 16.36 24.74 16.82C24.36 17.29 23.98 17.89 23.73 18.48C23.49 19.07 23.35 19.68 23.27 20.37C23.20 21.05 22.79 18.42 23.31 22.59C23.83 26.76 25.29 37.75 26.39 45.38C27.50 53.00 29.26 63.99 29.95 68.35C30.65 72.71 30.24 70.34 30.55 71.54C30.87 72.74 31.60 74.51 31.84 75.54C32.09 76.58 32.07 76.90 32.03 77.76Z" fill="#FFFFFF"></path><g stroke="#E81C25" stroke-width="1.8" stroke-linecap="round" opacity="0.55"><path d="M60.0 130.0L43.0 120.0"></path><path d="M43.0 120.0L29.0 105.0"></path><path d="M29.0 105.0L18.0 91.0"></path><path d="M18.0 91.0L9.5 80.0"></path><path d="M60.0 130.0L38.0 70.0"></path><path d="M38.0 70.0L33.7 45.4"></path><path d="M33.7 45.4L31.2 31.1"></path><path d="M31.2 31.1L29.4 20.8"></path><path d="M60.0 130.0L54.5 65.0"></path><path d="M54.5 65.0L53.3 37.0"></path><path d="M53.3 37.0L52.6 21.0"></path><path d="M52.6 21.0L52.1 9.0"></path><path d="M60.0 130.0L70.0 67.0"></path><path d="M70.0 67.0L72.2 41.6"></path><path d="M72.2 41.6L73.5 26.7"></path><path d="M73.5 26.7L74.4 16.2"></path><path d="M60.0 130.0L84.0 75.0"></path><path d="M84.0 75.0L89.2 55.7"></path><path d="M89.2 55.7L92.3 44.1"></path><path d="M92.3 44.1L94.6 35.4"></path><path d="M38.0 70.0L54.5 65.0"></path><path d="M54.5 65.0L70.0 67.0"></path><path d="M70.0 67.0L84.0 75.0"></path></g><g fill="#E81C25"><circle cx="60.0" cy="130.0" r="3"></circle><circle cx="43.0" cy="120.0" r="3"></circle><circle cx="29.0" cy="105.0" r="3"></circle><circle cx="18.0" cy="91.0" r="3"></circle><circle cx="9.5" cy="80.0" r="3.5"></circle><circle cx="38.0" cy="70.0" r="3"></circle><circle cx="33.7" cy="45.4" r="3"></circle><circle cx="31.2" cy="31.1" r="3"></circle><circle cx="29.4" cy="20.8" r="3.5"></circle><circle cx="54.5" cy="65.0" r="3"></circle><circle cx="53.3" cy="37.0" r="3"></circle><circle cx="52.6" cy="21.0" r="3"></circle><circle cx="52.1" cy="9.0" r="3.5"></circle><circle cx="70.0" cy="67.0" r="3"></circle><circle cx="72.2" cy="41.6" r="3"></circle><circle cx="73.5" cy="26.7" r="3"></circle><circle cx="74.4" cy="16.2" r="3.5"></circle><circle cx="84.0" cy="75.0" r="3"></circle><circle cx="89.2" cy="55.7" r="3"></circle><circle cx="92.3" cy="44.1" r="3"></circle><circle cx="94.6" cy="35.4" r="3.5"></circle></g></svg><span>أشّر البلاغ</span></button>
   </div>
-  <div class="prep" role="status">
+  <div class="prep">
+    <span id="prepSay" class="sr" role="status"></span>
     <span id="prepText">نجهّز قراءة الإشارة</span>
     <span id="prepTrack" class="track" aria-hidden="true"><i id="prepBar"></i></span>
   </div>
@@ -454,7 +477,7 @@ html:not(.debug) .debug-only { display: none !important; }
       <path d="M28 360c0-78 54-128 122-128s122 50 122 128" stroke="#F2F3F5" stroke-opacity=".7" stroke-width="2.5" stroke-dasharray="9 9"/>
       <path d="M14 44V16h28M286 44V16h-28" stroke="#F2F3F5" stroke-width="3" stroke-linecap="round"/>
     </svg>
-    <div id="count"><b id="num">3</b><span>ارفع يدك</span></div>
+    <div id="count" aria-live="polite"><b id="num">3</b><span>ارفع يدك</span></div>
     <p id="status" role="status"></p>
     <p id="tag"><i></i>يتابع نقاط اليدين والجسم</p>
     <div id="pills">
@@ -497,21 +520,23 @@ html:not(.debug) .debug-only { display: none !important; }
       </svg>
       <span class="hand"><svg width="74" height="74" viewBox="0 6 100 92" fill="none" aria-hidden="true"><g stroke="#111418" stroke-width="2.2" stroke-linecap="round" opacity="0.75"><path d="M50.0 92.0L36.0 84.0"></path><path d="M36.0 84.0L26.0 74.0"></path><path d="M26.0 74.0L19.0 64.0"></path><path d="M19.0 64.0L13.0 56.0"></path><path d="M50.0 92.0L40.0 58.0"></path><path d="M40.0 58.0L38.0 42.0"></path><path d="M38.0 42.0L37.0 31.0"></path><path d="M37.0 31.0L36.0 22.0"></path><path d="M50.0 92.0L50.0 56.0"></path><path d="M50.0 56.0L50.0 38.0"></path><path d="M50.0 38.0L50.0 26.0"></path><path d="M50.0 26.0L50.0 16.0"></path><path d="M50.0 92.0L59.0 58.0"></path><path d="M59.0 58.0L61.0 42.0"></path><path d="M61.0 42.0L62.0 31.0"></path><path d="M62.0 31.0L63.0 23.0"></path><path d="M50.0 92.0L67.0 63.0"></path><path d="M67.0 63.0L71.0 51.0"></path><path d="M71.0 51.0L73.0 43.0"></path><path d="M73.0 43.0L75.0 36.0"></path><path d="M40.0 58.0L50.0 56.0"></path><path d="M50.0 56.0L59.0 58.0"></path><path d="M59.0 58.0L67.0 63.0"></path></g><g fill="#E81C25"><circle cx="50.0" cy="92.0" r="3.2"></circle><circle cx="36.0" cy="84.0" r="3.2"></circle><circle cx="26.0" cy="74.0" r="3.2"></circle><circle cx="19.0" cy="64.0" r="3.2"></circle><circle cx="13.0" cy="56.0" r="3.8"></circle><circle cx="40.0" cy="58.0" r="3.2"></circle><circle cx="38.0" cy="42.0" r="3.2"></circle><circle cx="37.0" cy="31.0" r="3.2"></circle><circle cx="36.0" cy="22.0" r="3.8"></circle><circle cx="50.0" cy="56.0" r="3.2"></circle><circle cx="50.0" cy="38.0" r="3.2"></circle><circle cx="50.0" cy="26.0" r="3.2"></circle><circle cx="50.0" cy="16.0" r="3.8"></circle><circle cx="59.0" cy="58.0" r="3.2"></circle><circle cx="61.0" cy="42.0" r="3.2"></circle><circle cx="62.0" cy="31.0" r="3.2"></circle><circle cx="63.0" cy="23.0" r="3.8"></circle><circle cx="67.0" cy="63.0" r="3.2"></circle><circle cx="71.0" cy="51.0" r="3.2"></circle><circle cx="73.0" cy="43.0" r="3.2"></circle><circle cx="75.0" cy="36.0" r="3.8"></circle></g></svg></span>
       <svg class="i clock"><use href="#i-clock"/></svg>
+      <svg class="i nonet"><use href="#i-wifioff"/></svg>
     </div>
-    <h1 id="readTitle" class="big-title" tabindex="-1">نقرأ إشارتك…</h1>
+    <h1 id="readTitle" class="big-title" tabindex="-1" aria-live="polite">نقرأ إشارتك…</h1>
     <p id="readLead" class="lead">ثوانٍ، وبعدها تتأكد من البلاغ قبل ما ينرسل.</p>
   </div>
   <ol class="steps">
     <li class="done"><div class="rail"><span class="mark"><svg class="i"><use href="#i-check"/></svg></span><span class="line"></span></div>
-      <div class="txt"><b>طلّعنا نقاط اليدين والجسم</b><span class="s">داخل جوالك · <bdi id="readFrames">0</bdi> إطار</span></div></li>
-    <li class="now"><div class="rail"><span class="mark"></span><span class="line"></span></div>
-      <div class="txt"><b>نقرأ نوع البلاغ</b><span class="s" id="readStep">13 نوع، أو إشارة عادية</span></div></li>
+      <div class="txt"><b>طلّعنا نقاط اليدين والجسم</b><span class="s">داخل جوالك</span></div></li>
+    <li class="now"><div class="rail"><span class="mark"><svg class="i xm"><use href="#i-x"/></svg></span><span class="line"></span></div>
+      <div class="txt"><b>نقرأ نوع البلاغ</b><span class="s" id="readStep">من نقاط حركتك</span></div></li>
     <li class="todo"><div class="rail"><span class="mark"></span></div>
       <div class="txt"><b>تتأكد قبل الإرسال</b><span class="s">بعدها</span></div></li>
   </ol>
   <div class="actions">
     <p class="privacy wait-only"><svg class="i"><use href="#i-lock"/></svg>الفيديو ما طلع من جوالك.</p>
-    <button id="readCancel" class="ghost wait-only" type="button">إلغاء</button>
+    <button class="ghost wait-only" type="button" data-to="types"><svg class="i"><use href="#i-grid"/></svg>اختر النوع بنفسك</button>
+    <button id="readCancel" class="quiet wait-only" type="button">إلغاء</button>
     <button class="primary slow-only" type="button" data-to="types"><svg class="i"><use href="#i-grid"/></svg>اختر النوع بنفسك</button>
     <button class="ghost slow-only" type="button" data-sign><svg class="i"><use href="#i-redo"/></svg>أعد الإشارة</button>
   </div>
@@ -563,14 +588,19 @@ html:not(.debug) .debug-only { display: none !important; }
 <!-- 5أ · Unsure: nothing is preselected, a tap goes to the confirm screen -->
 <section id="s-unsure" class="scr" hidden>
   <header class="head" style="gap: 6px">
-    <span class="amber-chip"><svg class="i"><use href="#i-alert"/></svg>ما تأكدنا من الإشارة</span>
+    <span class="amber-chip soft"><svg class="i"><use href="#i-hand"/></svg>ما تأكدنا من الإشارة</span>
     <h1 id="uTitle" class="big-title" style="margin-top: 4px" tabindex="-1">هل تقصد هذا؟</h1>
     <p id="uLead" class="note"></p>
   </header>
-  <nav id="uChoices" class="choices" aria-label="الأنواع الأقرب"></nav>
-  <div style="padding: 12px 20px 0"><button class="ghost" type="button" data-to="types"><svg class="i"><use href="#i-grid"/></svg>كل الأنواع (13)</button></div>
   <section class="with"><span>ينرسل مع البلاغ</span><b id="uWith"></b></section>
-  <div class="actions"><button class="ghost" type="button" data-sign style="min-height: 56px"><svg class="i"><use href="#i-redo"/></svg>أعد الإشارة</button></div>
+  <!-- the likely answer sits where the thumb is; "not this" and "sign again" share the row under it -->
+  <div class="actions">
+    <div id="uChoices" class="choices here" role="group" aria-label="الأنواع الأقرب"></div>
+    <div class="two">
+      <button class="ghost" type="button" data-to="types"><svg class="i"><use href="#i-grid"/></svg>كل الأنواع</button>
+      <button class="ghost" type="button" data-sign><svg class="i"><use href="#i-redo"/></svg>أعد الإشارة</button>
+    </div>
+  </div>
 </section>
 
 <!-- 5ب · All 13 types -->
@@ -592,13 +622,14 @@ html:not(.debug) .debug-only { display: none !important; }
 
 <!-- 6 · Sent (a demo: nothing reached any agency) -->
 <section id="s-sent" class="scr" hidden>
+ <div class="fold">
   <div class="center-col">
-    <span class="badge"><svg class="i"><use href="#i-check"/></svg></span>
+    <span class="badge plain"><svg class="i"><use href="#i-send"/></svg></span>
     <h1 class="big-title" tabindex="-1">انرسل البلاغ التجريبي</h1>
-    <p class="note">رقم تجريبي <bdi id="sId" dir="ltr" style="font-weight: 600; color: var(--ink)">YB-0000</bdi> · <bdi id="sTime"></bdi></p>
+    <p class="note">الساعة <bdi id="sTime"></bdi></p>
   </div>
-  <div class="pad" style="margin-top: 18px">
-    <p class="demo"><svg class="i"><use href="#i-alert"/></svg><span><b>ما وصل لأي جهة.</b> التطبيق للحين مو مربوط بالجهات، فالإرسال هنا عرض بس. لو الطارئ حقيقي، اعرض الشاشة لأحد جنبك يتصل.</span></p>
+  <div class="pad" style="margin-top: 16px">
+    <p class="demo big"><svg class="i"><use href="#i-alert"/></svg><span><b>ما وصل لأي جهة.</b> التطبيق للحين مو مربوط بالجهات، فالإرسال هنا عرض بس. لو الطارئ حقيقي، اعرض الشاشة لأحد جنبك يتصل.</span></p>
   </div>
   <section class="kv">
     <div><span>النوع</span><b id="sType"></b></div>
@@ -606,15 +637,16 @@ html:not(.debug) .debug-only { display: none !important; }
     <div><span>الموقع</span><b id="sLoc"></b></div>
     <div><span>معه</span><b id="sMed"></b></div>
   </section>
-  <section class="concept" aria-label="تصوّر مستقبلي">
+  <div class="actions">
+    <button class="primary" type="button" data-to="show"><svg class="i"><use href="#i-phone"/></svg>اعرض الشاشة لأحد جنبك</button>
+    <button class="ghost" type="button" data-home>الرئيسية</button>
+  </div>
+ </div>
+  <section class="concept after" aria-label="تصوّر مستقبلي">
     <div class="top"><span class="tag">تصوّر مستقبلي</span><small>يحتاج ربط مع الجهات</small></div>
     <p><svg class="i"><use href="#i-msg"/></svg>الجهة تتواصل معك كتابةً، مو مكالمة</p>
     <p><svg class="i"><use href="#i-bell"/></svg>ننبّهك بالاهتزاز والوميض مع كل تحديث</p>
   </section>
-  <div class="actions">
-    <button class="dark-btn" type="button" data-home>الرئيسية</button>
-    <button class="ghost" type="button" data-to="show">اعرض الشاشة لأحد جنبك</button>
-  </div>
 </section>
 
 <!-- Not sent: no connection -->
@@ -623,8 +655,9 @@ html:not(.debug) .debug-only { display: none !important; }
     <span class="badge amb"><svg class="i"><use href="#i-wifioff"/></svg></span>
     <h1 class="big-title" tabindex="-1">ما انرسل البلاغ بعد</h1>
     <p class="lead">ما فيه اتصال. نحاول نرسله مرة ثانية لحالنا أول ما يرجع النت، فخل الصفحة مفتوحة.</p>
+    <p class="note">ولو انرسل، هو تجريبي وما يوصل لأي جهة.</p>
   </div>
-  <div class="retry" role="status"><b><svg class="i"><use href="#i-clock"/></svg><span id="fNext">نحاول مرة ثانية بعد 8 ثواني</span></b><small id="fTry">المحاولة 1</small></div>
+  <div class="retry"><b><svg class="i"><use href="#i-clock"/></svg><span id="fNext">نحاول مرة ثانية بعد 8 ثواني</span></b><small id="fTry" role="status">المحاولة 1</small></div>
   <section class="show">
     <span class="label">اعرض الشاشة لأحد جنبك</span>
     <div class="card" id="fCard"></div>
@@ -695,8 +728,8 @@ html:not(.debug) .debug-only { display: none !important; }
 </section>
 
 <script src="vendor/holistic/holistic.js"></script>
-<script src="report.js?v=5"></script>
-<script src="app.js?v=5"></script>
-<script src="camera.js?v=5"></script>
+<script src="report.js?v=6"></script>
+<script src="app.js?v=6"></script>
+<script src="camera.js?v=6"></script>
 </body>
 </html>
