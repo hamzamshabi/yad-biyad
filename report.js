@@ -1,13 +1,15 @@
 // Everything about a report that someone else decides lives here, so it can change in one place:
 // the 13 types and their agencies, when a reading counts as sure, and the send itself.
 
-// The agencies and the type to agency table are copied from the design (app_design/gen_canvas.py, the NotThis screen).
-// The real table, with the priority, belongs to the backend member, and nothing here is final until Hamza approves it.
+// The agencies and the type to agency table started from the design (app_design/gen_canvas.py, the NotThis screen).
+// Hamza approved it on 2 Nov 2026, with one change: the design's "المرور والطوارئ الموحد 993 · 911" is two agencies now,
+// so حادث goes to 993 and استغاثة عامة to 911. The priority is still missing; it belongs to the backend member.
 const AGENCIES = {
   rc: {name: 'الهلال الأحمر', number: '997'},
   cd: {name: 'الدفاع المدني', number: '998'},
   po: {name: 'الشرطة', number: '999'},
-  tr: {name: 'المرور والطوارئ الموحد', number: '993 · 911'},
+  tr: {name: 'المرور', number: '993'},
+  un: {name: 'الطوارئ الموحد', number: '911'},
 };
 
 // In the order of the "all types" screen. The names are the ones the reading service answers in type_ar.
@@ -24,12 +26,13 @@ const TYPES = [
   {name: 'سلاح أو تهديد', icon: 'cross', agency: 'po'},
   {name: 'شخص مفقود', icon: 'search', agency: 'po'},
   {name: 'حادث', icon: 'car', agency: 'tr'},
-  {name: 'استغاثة عامة', icon: 'buoy', agency: 'tr'},
+  {name: 'استغاثة عامة', icon: 'buoy', agency: 'un'},
 ];
 
 // A reading the service marks as a report opens "تأكّد قبل الإرسال" with the type already chosen only when its p_normal is
 // below this number. Otherwise it opens "هل تقصد؟", where the person taps the type first. Hamza decides the number
 // (SCREENS_BRIEF rule 6). While it is null, no reading counts as sure, so every report goes through "هل تقصد؟".
+// Hamza, 2 Nov 2026: stays null for now.
 const SURE_BELOW = null;
 
 // The one place a report leaves the app. There is no report server yet, so this is a demo: nothing is sent anywhere.
