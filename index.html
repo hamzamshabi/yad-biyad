@@ -708,10 +708,11 @@ html:not(.debug) .debug-only { display: none !important; }
   <section class="psec">
     <span class="label">ينرسل مع كل بلاغ</span>
     <label class="field"><span>فصيلة الدم</span>
-      <select data-key="blood"><option value="">اختر</option><option>O+</option><option>O-</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option value="ما أعرف">ما أعرف</option></select></label>
+      <select data-key="blood" dir="ltr"><option value="">اختر</option><option>O+</option><option>O-</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option value="ما أعرف">ما أعرف</option></select></label>
     <label class="field"><span>الحساسية</span><input data-key="allergy" type="text" placeholder="مثال: البنسلين، أو ما فيه"></label>
     <label class="field"><span>السمع والتواصل</span><input data-key="hearing" type="text" placeholder="مثال: صمم كلي · لغة الإشارة"></label>
-    <label class="field"><span>جهة اتصال</span><input data-key="contact" type="text" placeholder="الاسم والرقم"></label>
+    <label class="field"><span>جهة اتصال</span><input data-key="contact" type="text" placeholder="الاسم، مثال: أخي"></label>
+    <label class="field"><span>رقم جهة الاتصال</span><input data-key="contactPhone" type="tel" placeholder="+966 5x xxx xxxx" autocomplete="off" dir="ltr"></label>
   </section>
   <section class="psec">
     <span class="label">التنبيهات وسهولة الاستخدام</span>
@@ -729,8 +730,8 @@ html:not(.debug) .debug-only { display: none !important; }
 </section>
 
 <script src="vendor/holistic/holistic.js"></script>
-<script src="report.js?v=7"></script>
-<script src="app.js?v=7"></script>
-<script src="camera.js?v=7"></script>
+<script src="report.js?v=8"></script>
+<script src="app.js?v=8"></script>
+<script src="camera.js?v=8"></script>
 </body>
 </html>

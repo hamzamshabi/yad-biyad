@@ -23,10 +23,16 @@ const store = {
 };
 
 // ---------- profile and preferences ----------
-const profile = Object.assign({name: '', phone: '', blood: '', allergy: '', hearing: '', contact: '', alerts: true, big: false, hand: 'right'},
+const profile = Object.assign({name: '', phone: '', blood: '', allergy: '', hearing: '', contact: '', contactPhone: '', alerts: true, big: false, hand: 'right'},
                               store.get('yb.profile', {}));
+// The contact used to be one field for the name and the number; a number typed after an Arabic name shows reversed, so it now
+// has its own field. A profile saved the old way is split once here.
+if (!profile.contactPhone) {
+  const m = String(profile.contact).match(/^(.*?)[\s·:,،-]*(\+?\d[\d\s-]{5,}\d)\s*$/);
+  if (m) { profile.contact = m[1].trim(); profile.contactPhone = m[2].trim(); store.set('yb.profile', profile); }
+}
 const medParts = () => [profile.blood && `فصيلة \u2066${profile.blood}\u2069`, profile.allergy && `حساسية: ${profile.allergy}`, profile.hearing].filter(Boolean);
-const medDone = () => !!(profile.blood && profile.allergy && profile.hearing && profile.contact);
+const medDone = () => !!(profile.blood && profile.allergy && profile.hearing && profile.contactPhone);
 
 function applyPrefs() {
   document.documentElement.classList.toggle('big', !!profile.big);
@@ -430,7 +436,7 @@ function buildReport() {
     type: t.name, agency: t.agency, agency_name: AGENCIES[t.agency].name, agency_number: AGENCIES[t.agency].number,
     source, reading: r && {p_normal: r.p_normal, type_ar: r.type_ar, words: r.words},
     location: loc.state === 'ok' ? {...loc.pos} : null, landmark: landmark() || null,
-    profile: {name: profile.name, phone: profile.phone, blood: profile.blood, allergy: profile.allergy, hearing: profile.hearing, contact: profile.contact},
+    profile: {name: profile.name, phone: profile.phone, blood: profile.blood, allergy: profile.allergy, hearing: profile.hearing, contact: profile.contact, contact_phone: profile.contactPhone},
     created_at: new Date().toISOString(),
   };
 }
